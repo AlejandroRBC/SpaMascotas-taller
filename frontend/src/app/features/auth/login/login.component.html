@@ -1,0 +1,37 @@
+<div class="pagina-login">
+    <div class="tarjeta-login">
+        <!-- Logo / Marca -->
+        <div class="encabezado">
+            <span class="icono-mascota">🐾</span>
+            <h1>Spa Mascotas</h1>
+            <p class="subtitulo">Inicia sesión para continuar</p>
+        </div>
+
+        <!-- Mensaje de error -->
+        @if (errorMensaje()) {
+        <div class="alerta-error">{{ errorMensaje() }}</div>
+        }
+
+        <!-- Formulario -->
+        <div class="campo-form">
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" placeholder="correo@ejemplo.com" [(ngModel)]="email" />
+        </div>
+
+        <div class="campo-form">
+            <label for="contrasenia">Contraseña</label>
+            <input id="contrasenia" type="password" placeholder="Tu contraseña" [(ngModel)]="contrasenia" />
+        </div>
+
+        <button class="btn-primario" (click)="onLogin()" [disabled]="cargando()">
+            @if (cargando()) { Ingresando... } @else { Entrar }
+        </button>
+
+        <!-- Links secundarios -->
+        <div class="links-secundarios">
+            <a routerLink="/recuperar" class="btn-texto">¿Olvidaste tu contraseña?</a>
+            <span class="separador">•</span>
+            <a routerLink="/registro" class="btn-texto">Crear cuenta</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+<div class="pagina-recuperar">
+    <div class="tarjeta-recuperar">
+        <div class="encabezado">
+            <span class="icono-mascota">🔑</span>
+            <h1>Recuperar contraseña</h1>
+            <p class="subtitulo">Te enviaremos instrucciones a tu correo</p>
+        </div>
+
+        @if (errorMensaje()) {
+        <div class="alerta-error">{{ errorMensaje() }}</div>
+        }
+
+        @if (exitoMensaje()) {
+        <div class="alerta-exito">{{ exitoMensaje() }}</div>
+        }
+
+        <div class="campo-form">
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" placeholder="correo@ejemplo.com" [(ngModel)]="email" />
+        </div>
+
+        <button class="btn-primario" (click)="onRecuperar()" [disabled]="cargando()">
+            @if (cargando()) { Enviando... } @else { Enviar instrucciones }
+        </button>
+
+        <div class="links-secundarios">
+            <a routerLink="/login" class="btn-texto">← Volver al inicio de sesión</a>
+        </div>
+    </div>
+</div>

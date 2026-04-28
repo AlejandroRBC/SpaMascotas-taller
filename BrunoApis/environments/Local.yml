@@ -1,0 +1,4 @@
+name: LocalJWT
+variables:
+  - name: token
+    value: eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBzcGEuY29tIiwiaWF0IjoxNzc3MzU2OTAwLCJleHAiOjE3Nzc0NDMzMDB9.l2LIdTSZ12ldkhhc17IfsEc7-l8vEUhNz8Tc5guZicVJB86tZVxJYvarN3ic9gLl

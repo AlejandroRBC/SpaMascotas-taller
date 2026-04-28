@@ -1,0 +1,38 @@
+<div class="pagina-registro">
+    <div class="tarjeta-registro">
+        <div class="encabezado">
+            <span class="icono-mascota">🐾</span>
+            <h1>Crear cuenta</h1>
+            <p class="subtitulo">Únete al Spa de Mascotas</p>
+        </div>
+
+        @if (errorMensaje()) {
+        <div class="alerta-error">{{ errorMensaje() }}</div>
+        }
+
+        <div class="campo-form">
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" placeholder="correo@ejemplo.com" [(ngModel)]="email" />
+        </div>
+
+        <div class="campo-form">
+            <label for="contrasenia">Contraseña</label>
+            <input id="contrasenia" type="password" placeholder="Mínimo 6 caracteres" [(ngModel)]="contrasenia" />
+        </div>
+
+        <div class="campo-form">
+            <label for="confirmar">Confirmar contraseña</label>
+            <input id="confirmar" type="password" placeholder="Repite tu contraseña"
+                [(ngModel)]="confirmarContrasenia" />
+        </div>
+
+        <button class="btn-primario" (click)="onRegistrar()" [disabled]="cargando()">
+            @if (cargando()) { Creando cuenta... } @else { Registrarme }
+        </button>
+
+        <div class="links-secundarios">
+            <span>¿Ya tienes cuenta?</span>
+            <a routerLink="/login" class="btn-texto">Iniciar sesión</a>
+        </div>
+    </div>
+</div>
