@@ -1,0 +1,460 @@
+@startuml
+!theme plain
+title Sistema de Gestión de Grooming - Modelo Entidad Relación
+
+' ==========================================
+' 1. CATÁLOGOS DINÁMICOS
+' ==========================================
+
+entity "cat_temperamentos" as cat_temperamentos {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : TEXT <<UK>>
+    color_alerta : TEXT
+}
+
+entity "metodos_pago" as metodos_pago {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : TEXT
+}
+
+entity "roles" as roles {
+    * id : BIGINT <<PK>>
+    --
+    nombre : TEXT <<UK>>
+}
+
+' ==========================================
+' 2. IDENTIDAD Y ACCESO
+' ==========================================
+
+entity "usuarios" as usuarios {
+    * id : BIGINT <<PK>>
+    --
+    * email : TEXT <<UK>>
+    * password_hash : TEXT
+    email_verificado : BOOLEAN
+    estado : TEXT
+    creado_el : TIMESTAMP
+}
+
+entity "usuario_roles" as usuario_roles {
+    * id : BIGINT <<PK>>
+    --
+    * usuario_id : BIGINT <<FK>>
+    * rol_id : BIGINT <<FK>>
+    asignado_el : TIMESTAMP
+}
+
+' ==========================================
+' 3. ENTIDADES DE NEGOCIO
+' ==========================================
+
+entity "empleados" as empleados {
+    * id : BIGINT <<PK>>
+    --
+    usuario_id : BIGINT <<FK>> <<UK>>
+    * nombre : TEXT
+    activo : BOOLEAN
+    * puesto : TEXT
+}
+
+entity "clientes" as clientes {
+    * id : BIGINT <<PK>>
+    --
+    ci : TEXT
+    usuario_id : BIGINT <<FK>> <<UK>>
+    * nombre : TEXT
+    telefono : TEXT
+}
+
+entity "mascotas" as mascotas {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : TEXT
+    url_foto_mascota : TEXT
+    raza : TEXT
+    tamaño : TEXT
+    temperamento_esperado_id : BIGINT <<FK>>
+    cliente_id : BIGINT <<FK>>
+}
+
+' ==========================================
+' 4. OPERACIONES Y AGENDA
+' ==========================================
+
+entity "horarios_trabajo" as horarios_trabajo {
+    * id : BIGINT <<PK>>
+    --
+    empleado_id : BIGINT <<FK>>
+    * dia_semana : TEXT
+    * hora_inicio : TIME
+    * hora_fin : TIME
+    inicio_almuerzo : TIME
+    fin_almuerzo : TIME
+    * vigente_desde : DATE
+    vigente_hasta : DATE
+}
+
+entity "servicios" as servicios {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : TEXT
+    descripcion : TEXT
+    * duracion_minutos : INTEGER
+    precio_base : NUMERIC
+    activo : BOOLEAN
+}
+
+entity "servicios_precios" as servicios_precios {
+    * id : BIGINT <<PK>>
+    --
+    * servicio_id : BIGINT <<FK>>
+    * tamaño_mascota : TEXT
+    * precio : NUMERIC
+}
+
+entity "citas" as citas {
+    * id : BIGINT <<PK>>
+    --
+    cliente_id : BIGINT <<FK>>
+    mascota_id : BIGINT <<FK>>
+    empleado_id : BIGINT <<FK>>
+    * fecha_hora_inicio : TIMESTAMP
+    * fecha_hora_fin : TIMESTAMP
+    estado : TEXT
+}
+
+entity "cita_detalles" as cita_detalles {
+    * id : BIGINT <<PK>>
+    --
+    cita_id : BIGINT <<FK>>
+    servicio_id : BIGINT <<FK>>
+    completado : BOOLEAN
+    precio_final : NUMERIC
+}
+
+' ==========================================
+' 5. INVENTARIO Y GROOMING
+' ==========================================
+
+entity "categoria" as categoria {
+    * id : BIGINT <<PK>>
+    --
+    * nom_categoria : TEXT
+}
+
+entity "es_de_catego" as es_de_catego {
+    * id : BIGINT <<PK>>
+    --
+    * producto_id : BIGINT <<FK>>
+    * categoria_id : BIGINT <<FK>>
+}
+
+entity "productos" as productos {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : TEXT
+    sku : TEXT <<UK>>
+    stock_actual : INTEGER
+    precio_venta : NUMERIC
+    fecha_vencimiento : DATE
+    lote : TEXT
+}
+
+entity "movimientos_inventario" as movimientos_inventario {
+    * id : BIGINT <<PK>>
+    --
+    empleado_id : BIGINT <<FK>>
+    tipo_movimiento_id : TEXT
+    * cantidad : INTEGER
+    * producto_id : BIGINT <<FK>>
+    notas : TEXT
+    fecha : TIMESTAMP
+}
+
+entity "fichas_ingreso" as fichas_ingreso {
+    * id : BIGINT <<PK>>
+    --
+    temperamento_id : BIGINT <<FK>>
+    cita_id : BIGINT <<FK>> <<UK>>
+    observaciones_generales : TEXT
+}
+
+entity "ficha_detalles" as ficha_detalles {
+    * id : BIGINT <<PK>>
+    --
+    ficha_id : BIGINT <<FK>>
+    descripcion_estado : TEXT
+}
+
+' ==========================================
+' 6. MÓDULO COMERCIAL
+' ==========================================
+
+entity "ventas" as ventas {
+    * id : BIGINT <<PK>>
+    --
+    cliente_id : BIGINT <<FK>>
+    vendedor_id : BIGINT <<FK>>
+    metodo_pago_id : BIGINT <<FK>>
+    fecha_venta : TIMESTAMP
+    subtotal : NUMERIC
+    descuento : NUMERIC
+    * total_final : NUMERIC
+}
+
+entity "venta_items" as venta_items {
+    * id : BIGINT <<PK>>
+    --
+    venta_id : BIGINT <<FK>>
+    producto_id : BIGINT <<FK>>
+    * cantidad : INTEGER
+    precio_unitario_historico : NUMERIC
+}
+
+entity "pedido" as pedido {
+    * id : BIGINT <<PK>>
+    --
+    venta_items : BIGINT <<FK>>
+    estado : TEXT
+    fechaEnvio : DATE
+    fechaEntrega : DATE
+}
+
+entity "venta_servicios" as venta_servicios {
+    * id : BIGINT <<PK>>
+    --
+    venta_id : BIGINT <<FK>>
+    cita_detalle_id : BIGINT <<FK>>
+    precio_cobrado : NUMERIC
+}
+
+' ==========================================
+' 7. MULTIMEDIA Y EVIDENCIA
+' ==========================================
+
+entity "galeria_mascotas" as galeria_mascotas {
+    * id : BIGINT <<PK>>
+    --
+    cita_id : BIGINT <<FK>>
+    * url_image : TEXT
+    momento : TEXT
+    fecha_carga : TIMESTAMP
+}
+
+' ==========================================
+' 8. POST-SERVICIO Y FIDELIZACIÓN
+' ==========================================
+
+entity "recomendaciones_post_servicio" as recomendaciones_post_servicio {
+    * id : BIGINT <<PK>>
+    --
+    cita_id : BIGINT <<FK>> <<UK>>
+    recomendacion : TEXT
+    proxima_cita_sugerida : DATE
+}
+
+' ==========================================
+' 9. DISPONIBILIDAD Y EXCEPCIONES
+' ==========================================
+
+entity "bloqueos_agenda" as bloqueos_agenda {
+    * id : BIGINT <<PK>>
+    --
+    * titulo : TEXT
+    tipo : TEXT
+    * fecha_inicio : TIMESTAMP
+    * fecha_fin : TIMESTAMP
+    empleado_id : BIGINT <<FK>>
+    descripcion : TEXT
+    creado_por : BIGINT <<FK>>
+}
+
+' ==========================================
+' 10. SALUD Y SEGURIDAD
+' ==========================================
+
+entity "vacunas" as vacunas {
+    * id : BIGINT <<PK>>
+    --
+    * nombre : TEXT <<UK>>
+}
+
+entity "mascota_vacunas" as mascota_vacunas {
+    * id : BIGINT <<PK>>
+    --
+    vacuna_id : BIGINT <<FK>>
+    mascota_id : BIGINT <<FK>>
+    * fecha_aplicacion : DATE
+    fecha_refuerzo : DATE
+}
+
+entity "restricciones_mascota" as restricciones_mascota {
+    * id : BIGINT <<PK>>
+    --
+    mascota_id : BIGINT <<FK>>
+    tipo : TEXT
+    descripcion : TEXT
+    gravedad : TEXT
+}
+
+' ==========================================
+' 11. PREFERENCIAS DEL CLIENTE
+' ==========================================
+
+entity "cliente_preferencias" as cliente_preferencias {
+    * id : BIGINT <<PK>>
+    --
+    cliente_id : BIGINT <<FK>>
+    * nombre : TEXT
+    valor : TEXT
+}
+
+' ==========================================
+' 12. FEEDBACK
+' ==========================================
+
+entity "calificaciones_cita" as calificaciones_cita {
+    * id : BIGINT <<PK>>
+    --
+    cita_id : BIGINT <<FK>> <<UK>>
+    puntuacion : INTEGER
+    comentario : TEXT
+    fecha : TIMESTAMP
+}
+
+' ==========================================
+' 13. NOTIFICACIONES
+' ==========================================
+
+entity "notificaciones_programadas" as notificaciones_programadas {
+    * id : BIGINT <<PK>>
+    --
+    * tipo : TEXT
+    * canal : TEXT
+    cliente_destino_id : BIGINT <<FK>>
+    * programado_para : TIMESTAMP
+    estado : TEXT
+}
+
+' ==========================================
+' RELACIONES
+' ==========================================
+
+' roles - usuario_roles (1:N)
+roles ||--o{ usuario_roles : "tiene"
+
+' usuarios - usuario_roles (1:N)
+usuarios ||--o{ usuario_roles : "asigna"
+
+' usuarios - empleados (1:1)
+usuarios ||--|| empleados : "puede ser"
+
+' usuarios - clientes (1:1)
+usuarios ||--|| clientes : "puede ser"
+
+' clientes - mascotas (1:N)
+clientes ||--o{ mascotas : "posee"
+
+' cat_temperamentos - mascotas (1:N)
+cat_temperamentos ||--o{ mascotas : "predice"
+
+' empleados - horarios_trabajo (1:N)
+empleados ||--o{ horarios_trabajo : "tiene"
+
+' citas - cliente (N:1)
+citas }o--|| clientes : "realizada por"
+
+' mascotas - citas (1:N)
+mascotas ||--o{ citas : "asiste a"
+
+' empleados - citas (1:N)
+empleados ||--o{ citas : "atiende"
+
+' servicios - servicios_precios (1:N)
+servicios ||--o{ servicios_precios : "define"
+
+' citas - cita_detalles (1:N)
+citas ||--o{ cita_detalles : "contiene"
+
+' servicios - cita_detalles (1:N)
+servicios ||--o{ cita_detalles : "se detalla en"
+
+' fichas_ingreso - citas (1:1)
+fichas_ingreso ||--|| citas : "genera"
+
+' cat_temperamentos - fichas_ingreso (1:N)
+cat_temperamentos ||--o{ fichas_ingreso : "registra"
+
+' fichas_ingreso - ficha_detalles (1:N)
+fichas_ingreso ||--o{ ficha_detalles : "tiene"
+
+' productos - es_de_catego (1:N)
+productos ||--o{ es_de_catego : "pertenece a"
+
+' categoria - es_de_catego (1:N)
+categoria ||--o{ es_de_catego : "agrupa"
+
+' productos - movimientos_inventario (1:N)
+productos ||--o{ movimientos_inventario : "tiene"
+
+' empleados - movimientos_inventario (1:N)
+empleados ||--o{ movimientos_inventario : "registra"
+
+' clientes - ventas (1:N)
+clientes ||--o{ ventas : "realiza"
+
+' empleados - ventas (1:N)
+empleados ||--o{ ventas : "gestiona"
+
+' metodos_pago - ventas (1:N)
+metodos_pago ||--o{ ventas : "usa"
+
+' ventas - venta_items (1:N)
+ventas ||--o{ venta_items : "incluye"
+
+' productos - venta_items (1:N)
+productos ||--o{ venta_items : "se vende en"
+
+' venta_items - pedido (1:1)
+venta_items ||--|| pedido : "tiene"
+
+' ventas - venta_servicios (1:N)
+ventas ||--o{ venta_servicios : "factura"
+
+' cita_detalles - venta_servicios (1:1)
+cita_detalles ||--|| venta_servicios : "se cobra en"
+
+' citas - galeria_mascotas (1:N)
+citas ||--o{ galeria_mascotas : "documenta"
+
+' citas - recomendaciones_post_servicio (1:1)
+citas ||--|| recomendaciones_post_servicio : "recibe"
+
+' empleados - bloqueos_agenda (1:N)
+empleados ||--o{ bloqueos_agenda : "tiene"
+
+' usuarios - bloqueos_agenda (1:N)
+usuarios ||--o{ bloqueos_agenda : "crea"
+
+' vacunas - mascota_vacunas (1:N)
+vacunas ||--o{ mascota_vacunas : "requiere"
+
+' mascotas - mascota_vacunas (1:N)
+mascotas ||--o{ mascota_vacunas : "tiene"
+
+' mascotas - restricciones_mascota (1:N)
+mascotas ||--o{ restricciones_mascota : "presenta"
+
+' clientes - cliente_preferencias (1:N)
+clientes ||--o{ cliente_preferencias : "configura"
+
+' citas - calificaciones_cita (1:1)
+citas ||--|| calificaciones_cita : "recibe"
+
+' clientes - notificaciones_programadas (1:N)
+clientes ||--o{ notificaciones_programadas : "recibe"
+
+@endumld
