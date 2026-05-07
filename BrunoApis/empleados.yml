@@ -1,0 +1,21 @@
+info:
+  name: empleados
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: http://localhost:8080/api/empleados
+  body:
+    type: json
+    data: |-
+      {
+        token : "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NzgxMzI1MDgsImV4cCI6MTc3ODIxODkwOH0.TR3wL7Rss3J4SaiQeY3wKN7LSUmwrHr-EPOg2Rl9c2JoplPgXo9M3YaAPIwtpWBG" 
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

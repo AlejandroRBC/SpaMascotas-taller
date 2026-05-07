@@ -1,6 +1,6 @@
 import { Component, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
@@ -247,6 +247,13 @@ import { AuthService } from '@/app/core/services/auth.service';
             outline: none !important;
             box-shadow: none !important;
         }
+        .spa-field label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--spa-texto);
+        }
         :host ::ng-deep .spa-input:focus {
             border-color: var(--spa-primario) !important;
         }
@@ -288,6 +295,7 @@ import { AuthService } from '@/app/core/services/auth.service';
 })
 export class Recuperar {
     private authService = inject(AuthService);
+    private router = inject(Router);
 
     email = '';
 
@@ -307,8 +315,10 @@ export class Recuperar {
 
         this.authService.recuperarContrasenia(this.email).subscribe({
             next: (respuesta) => {
-                this.exitoMensaje.set(respuesta);
-                this.cargando.set(false);
+                this.exitoMensaje.set(respuesta + '. Redirigiendo...');
+                setTimeout(() => {
+                    this.router.navigate(['/auth/restablecer'], { queryParams: { email: this.email } });
+                }, 2000);
             },
             error: () => {
                 this.errorMensaje.set('Ocurrió un error, intenta de nuevo');

@@ -2,6 +2,7 @@ package com.spa.backend.controller.auth;
 
 import com.spa.backend.dto.request.LoginRequest;
 import com.spa.backend.dto.request.RegisterRequest;
+import com.spa.backend.dto.request.ResetPasswordRequest;
 import com.spa.backend.dto.response.AuthResponse;
 import com.spa.backend.service.interfaces.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +32,11 @@ public class AuthController {
     @PostMapping("/recuperar")
     public ResponseEntity<String> recuperar(@RequestParam String email) {
         return ResponseEntity.ok(authService.recuperarContrasenia(email));
+    }
+
+    // POST /api/auth/restablecer
+    @PostMapping("/restablecer")
+    public ResponseEntity<String> restablecer(@RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.restablecerContrasenia(request));
     }
 }

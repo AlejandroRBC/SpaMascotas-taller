@@ -3,17 +3,20 @@ package com.spa.backend.service.impl;
 import com.spa.backend.config.security.JwtUtil;
 import com.spa.backend.dto.request.LoginRequest;
 import com.spa.backend.dto.request.RegisterRequest;
+import com.spa.backend.dto.request.ResetPasswordRequest;
 import com.spa.backend.dto.response.AuthResponse;
 import com.spa.backend.model.Usuario;
 import com.spa.backend.model.Rol;
 import com.spa.backend.repository.UsuarioRepository;
 import com.spa.backend.repository.RolRepository;
 import com.spa.backend.service.interfaces.AuthService;
+import com.spa.backend.service.interfaces.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +27,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder codificadorContrasenia;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authManager;
-    private final com.spa.backend.service.interfaces.EmailService emailService;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -77,7 +80,7 @@ public class AuthServiceImpl implements AuthService {
         // Generar código de 6 dígitos
         String codigo = String.valueOf((int) (Math.random() * 900000) + 100000);
         usuario.setCodigoRecuperacion(codigo);
-        usuario.setCodigoRecuperacionExpiracion(java.time.LocalDateTime.now().plusMinutes(15));
+        usuario.setCodigoRecuperacionExpiracion(LocalDateTime.now().plusMinutes(15));
         usuarioRepository.save(usuario);
 
         // Enviar correo
@@ -87,4 +90,26 @@ public class AuthServiceImpl implements AuthService {
 
         return "Se envió un código de recuperación al correo: " + email;
     }
-}
+
+    @Override
+    public String restablecerContrasenia(ResetPasswordRequest request) {
+        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (usuario.getCodigoRecuperacion() == null || !usuario.getCodigoRecuperacion().equals(request.getCodigo())) {
+            throw new RuntimeException("Código de recuperación inválido");
+        }
+
+        if (usuario.getCodigoRecuperacionExpiracion().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("El código ha expirado");
+        }
+
+        // Actualizar contraseña
+        usuario.setPasswordHash(codificadorContrasenia.encode(request.getNuevaContrasenia()));
+        usuario.setCodigoRecuperacion(null);
+        usuario.setCodigoRecuperacionExpiracion(null);
+        usuarioRepository.save(usuario);
+
+        return "Contraseña actualizada exitosamente";
+    }
+}

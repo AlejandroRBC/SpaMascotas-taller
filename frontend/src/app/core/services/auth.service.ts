@@ -47,6 +47,15 @@ export class AuthService {
         );
     }
 
+    // Llama al backend para restablecer contraseña con el código
+    restablecerContrasenia(datos: { email: string; codigo: string; nuevaContrasenia: string }) {
+        return this.http.post<string>(
+            `${this.apiUrl}/restablecer`,
+            datos,
+            { responseType: 'text' as 'json' }
+        );
+    }
+
     // Guarda el token en localStorage
     guardarToken(token: string): void {
         localStorage.setItem(this.TOKEN_KEY, token);
