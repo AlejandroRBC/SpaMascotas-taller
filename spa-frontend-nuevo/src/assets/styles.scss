@@ -2,3 +2,20 @@
 @use 'primeicons/primeicons.css';
 @use '@/assets/layout/layout.scss';
 @use '@/assets/demo/demo.scss';
+
+// ── Tokens de diseño — Spa Mascotas ────────────────────────────
+// Se usan con el prefijo --spa-* para no colisionar con PrimeNG
+:root {
+    --spa-primario:    #20b2aa;   // Turquesa principal
+    --spa-acento:      #fde047;   // Amarillo suave (alertas / destacados)
+    --spa-capa1:       #e0f2fe;   // Celeste bebé (fondos de contenedores)
+    --spa-texto:       #083344;   // Azul petróleo (texto de alta jerarquía)
+    --spa-superficie:  #ffffff;   // Blanco base
+    --spa-fuente:      'Urbanist', sans-serif;
+}
+
+// Override global para que toda la app use Urbanist
+body {
+    font-family: var(--spa-fuente) !important;
+}
+
