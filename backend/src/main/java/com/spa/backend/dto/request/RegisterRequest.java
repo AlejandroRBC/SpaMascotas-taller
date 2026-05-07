@@ -7,4 +7,5 @@ import lombok.Data;
 public class RegisterRequest {
     private String email;
     private String contrasenia;
+    private String rol; // "ADMIN" o "CLIENTE"
 }

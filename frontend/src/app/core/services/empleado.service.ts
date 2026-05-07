@@ -7,6 +7,7 @@ export interface Empleado {
     nombre: string;
     puesto: string;
     activo: boolean;
+    email?: string;
     usuario?: {
         id?: number;
         email: string;

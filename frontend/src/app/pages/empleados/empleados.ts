@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -24,20 +24,21 @@ import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service'
                 </ng-template>
             </p-toolbar>
 
-            <p-table [value]="empleados" [rows]="10" [paginator]="true" [responsiveLayout]="'scroll'"
+            <p-table #dt [value]="empleados()" [rows]="10" [paginator]="true" [responsiveLayout]="'scroll'"
                      [globalFilterFields]="['nombre', 'puesto']" [rowHover]="true" dataKey="id">
                 <ng-template pTemplate="caption">
                     <div class="flex align-items-center justify-content-between">
                         <h5 class="m-0">Gestión de Empleados</h5>
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
-                            <input pInputText type="text" placeholder="Buscar..." />
+                            <input pInputText type="text" placeholder="Buscar..." (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
                         </span>
                     </div>
                 </ng-template>
                 <ng-template pTemplate="header">
                     <tr>
                         <th>Nombre</th>
+                        <th>Email</th>
                         <th>Puesto</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -46,6 +47,7 @@ import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service'
                 <ng-template pTemplate="body" let-empleado>
                     <tr>
                         <td>{{ empleado.nombre }}</td>
+                        <td>{{ empleado.usuario?.email || empleado.email }}</td>
                         <td>{{ empleado.puesto }}</td>
                         <td>
                             <span [class]="'customer-badge status-' + (empleado.activo ? 'qualified' : 'unqualified')">
@@ -61,11 +63,15 @@ import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service'
             </p-table>
         </div>
 
-        <p-dialog [(visible)]="empleadoDialog" [style]="{ width: '450px' }" header="Detalles del Empleado" [modal]="true" styleClass="p-fluid">
+        <p-dialog [visible]="empleadoDialog()" (visibleChange)="empleadoDialog.set($event)" [style]="{ width: '450px' }" header="Detalles del Empleado" [modal]="true" styleClass="p-fluid">
             <ng-template pTemplate="content">
                 <div class="field">
                     <label for="nombre">Nombre</label>
                     <input type="text" pInputText id="nombre" [(ngModel)]="empleado.nombre" required autofocus />
+                </div>
+                <div class="field">
+                    <label for="email">Email (Usuario)</label>
+                    <input type="email" pInputText id="email" [(ngModel)]="empleado.email" required />
                 </div>
                 <div class="field">
                     <label for="puesto">Puesto</label>
@@ -84,26 +90,35 @@ export class Empleados implements OnInit {
     private empleadoService = inject(EmpleadoService);
     private messageService = inject(MessageService);
 
-    empleados: Empleado[] = [];
+    empleados = signal<Empleado[]>([]);
     empleado: Empleado = { nombre: '', puesto: '', activo: true };
-    empleadoDialog: boolean = false;
+    empleadoDialog = signal(false);
 
     ngOnInit() {
         this.loadEmpleados();
     }
 
     loadEmpleados() {
-        this.empleadoService.listar().subscribe(data => this.empleados = data);
+        this.empleadoService.listar().subscribe({
+            next: (data) => {
+                console.log('Empleados cargados con éxito:', data);
+                this.empleados.set(data);
+            },
+            error: (err) => {
+                console.error('Error al cargar empleados:', err);
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los empleados' });
+            }
+        });
     }
 
     openNew() {
-        this.empleado = { nombre: '', puesto: '', activo: true };
-        this.empleadoDialog = true;
+        this.empleado = { nombre: '', puesto: '', activo: true, email: '' };
+        this.empleadoDialog.set(true);
     }
 
     editEmpleado(empleado: Empleado) {
-        this.empleado = { ...empleado };
-        this.empleadoDialog = true;
+        this.empleado = { ...empleado, email: empleado.usuario?.email };
+        this.empleadoDialog.set(true);
     }
 
     deleteEmpleado(empleado: Empleado) {
@@ -116,7 +131,7 @@ export class Empleados implements OnInit {
     }
 
     hideDialog() {
-        this.empleadoDialog = false;
+        this.empleadoDialog.set(false);
     }
 
     saveEmpleado() {

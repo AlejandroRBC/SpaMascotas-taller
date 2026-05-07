@@ -1,5 +1,6 @@
 package com.spa.backend.controller;
 
+import com.spa.backend.dto.request.EmpleadoRequest;
 import com.spa.backend.model.Empleado;
 import com.spa.backend.service.interfaces.EmpleadoService;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,8 @@ public class EmpleadoController {
     }
 
     @PostMapping
-    public ResponseEntity<Empleado> guardar(@RequestBody Empleado empleado) {
-        return ResponseEntity.ok(empleadoService.guardar(empleado));
+    public ResponseEntity<Empleado> guardar(@RequestBody EmpleadoRequest request) {
+        return ResponseEntity.ok(empleadoService.guardar(request));
     }
 
     @GetMapping("/{id}")

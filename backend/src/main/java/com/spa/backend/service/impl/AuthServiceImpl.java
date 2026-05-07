@@ -58,15 +58,25 @@ public class AuthServiceImpl implements AuthService {
         nuevoUsuario.setEstado("activo");
         nuevoUsuario.setEmailVerificado(false);
 
-        // Asignar rol por defecto CLIENTE
-        Rol rolCliente = rolRepository.findByNombre("CLIENTE")
-                .orElseGet(() -> rolRepository.save(new Rol(null, "CLIENTE")));
-        nuevoUsuario.getRoles().add(rolCliente);
+        // Determinar rol (ADMIN o CLIENTE)
+        String nombreRol = (request.getRol() != null && !request.getRol().isEmpty()) 
+                ? request.getRol().toUpperCase() 
+                : "CLIENTE";
+        
+        // Solo permitir ADMIN o CLIENTE desde el registro público
+        if (!nombreRol.equals("ADMIN") && !nombreRol.equals("CLIENTE")) {
+            nombreRol = "CLIENTE";
+        }
+
+        final String finalRol = nombreRol;
+        Rol rol = rolRepository.findByNombre(finalRol)
+                .orElseGet(() -> rolRepository.save(new Rol(null, finalRol)));
+        nuevoUsuario.getRoles().add(rol);
 
         usuarioRepository.save(nuevoUsuario);
 
         String token = jwtUtil.generarToken(request.getEmail());
-        return new AuthResponse(token, request.getEmail(), "Registro exitoso", "CLIENTE");
+        return new AuthResponse(token, request.getEmail(), "Registro exitoso", finalRol);
     }
 
     @Override

@@ -102,6 +102,20 @@ import { AuthService } from '@/app/core/services/auth.service';
                         />
                     </div>
 
+                    <div class="spa-field">
+                        <label>¿Qué tipo de cuenta deseas?</label>
+                        <div class="spa-role-selector">
+                            <div class="spa-role-option" [class.active]="rol === 'CLIENTE'" (click)="rol = 'CLIENTE'">
+                                <span class="role-icon">👤</span>
+                                <span>Cliente</span>
+                            </div>
+                            <div class="spa-role-option" [class.active]="rol === 'ADMIN'" (click)="rol = 'ADMIN'">
+                                <span class="role-icon">⚙️</span>
+                                <span>Administrador</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <p-button
                         id="btn-registro"
                         label="{{ cargando() ? 'Creando cuenta...' : 'Registrarme' }}"
@@ -253,6 +267,40 @@ import { AuthService } from '@/app/core/services/auth.service';
             gap: 0.4rem;
             margin-bottom: 1.25rem;
         }
+        .spa-role-selector {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        .spa-role-option {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid var(--spa-capa1);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--spa-superficie);
+        }
+        .spa-role-option:hover {
+            border-color: var(--spa-primario);
+            background: rgba(26, 158, 151, 0.05);
+        }
+        .spa-role-option.active {
+            border-color: var(--spa-primario);
+            background: rgba(26, 158, 151, 0.1);
+        }
+        .role-icon {
+            font-size: 1.5rem;
+        }
+        .spa-role-option span:last-child {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--spa-texto);
+        }
         .spa-field label {
             font-size: 0.8rem;
             font-weight: 700;
@@ -329,6 +377,7 @@ export class Registro {
     email = '';
     contrasenia = '';
     confirmarContrasenia = '';
+    rol = 'CLIENTE';
 
     cargando = signal(false);
     errorMensaje = signal('');
@@ -352,9 +401,13 @@ export class Registro {
         this.cargando.set(true);
         this.errorMensaje.set('');
 
-        this.authService.registro({ email: this.email, contrasenia: this.contrasenia }).subscribe({
+        this.authService.registro({ 
+            email: this.email, 
+            contrasenia: this.contrasenia,
+            rol: this.rol 
+        }).subscribe({
             next: (respuesta) => {
-                this.authService.guardarToken(respuesta.token);
+                this.authService.guardarSesion(respuesta.token, respuesta.rol);
                 this.router.navigate(['/']);
             },
             error: (err) => {

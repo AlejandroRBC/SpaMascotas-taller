@@ -12,7 +12,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class Empleado {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "empleados_id_seq")
+    @SequenceGenerator(name = "empleados_id_seq", sequenceName = "empleados_id_seq", allocationSize = 1)
     private Long id;
 
     @OneToOne
