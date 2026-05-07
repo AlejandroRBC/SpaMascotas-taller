@@ -14,14 +14,14 @@ import { AuthService } from '@/app/core/services/auth.service';
     imports: [ButtonModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, CommonModule],
     template: `
         <div class="spa-auth-wrapper">
-            <!-- PANEL IZQUIERDO — presentación del sistema -->
+            <!-- PANEL IZQUIERDO -->
             <div class="spa-auth-left">
-                <div class="spa-auth-brand">
-                    <span class="spa-paw">🐾</span>
+                <div class="spa-auth-brand animate-fade-in">
+                    <i class="pi pi-heart-fill spa-logo-icon"></i>
                     <h1 class="spa-brand-title">Spa Mascotas</h1>
                 </div>
 
-                <div class="spa-auth-hero">
+                <div class="spa-auth-hero animate-slide-up">
                     <h2 class="spa-hero-title">Tu centro de bienestar<br />para mascotas</h2>
                     <p class="spa-hero-subtitle">
                         Gestiona citas, clientes y servicios de spa y petshop desde un solo lugar.
@@ -30,52 +30,64 @@ import { AuthService } from '@/app/core/services/auth.service';
                 </div>
 
                 <ul class="spa-features">
-                    <li>
-                        <span class="spa-feature-icon">✂️</span>
+                    <li class="animate-slide-up" style="animation-delay: 0.1s">
+                        <span class="spa-feature-icon">
+                            <i class="pi pi-calendar-plus"></i>
+                        </span>
                         <span>Agendamiento de citas de grooming y baño</span>
                     </li>
-                    <li>
-                        <span class="spa-feature-icon">🛍️</span>
+                    <li class="animate-slide-up" style="animation-delay: 0.2s">
+                        <span class="spa-feature-icon">
+                            <i class="pi pi-shopping-cart"></i>
+                        </span>
                         <span>Inventario y ventas del Petshop integradas</span>
                     </li>
-                    <li>
-                        <span class="spa-feature-icon">📊</span>
+                    <li class="animate-slide-up" style="animation-delay: 0.3s">
+                        <span class="spa-feature-icon">
+                            <i class="pi pi-chart-bar"></i>
+                        </span>
                         <span>Reportes y estadísticas en tiempo real</span>
                     </li>
-                    <li>
-                        <span class="spa-feature-icon">🐕</span>
+                    <li class="animate-slide-up" style="animation-delay: 0.4s">
+                        <span class="spa-feature-icon">
+                            <i class="pi pi-users"></i>
+                        </span>
                         <span>Historial completo de cada mascota y cliente</span>
                     </li>
                 </ul>
             </div>
 
-            <!-- PANEL DERECHO — formulario de login -->
+            <!-- PANEL DERECHO -->
             <div class="spa-auth-right">
-                <div class="spa-login-card">
+                <div class="spa-login-card animate-fade-in">
                     <div class="spa-login-header">
+                        <div class="spa-icon-badge">
+                            <i class="pi pi-user"></i>
+                        </div>
                         <h2>Iniciar sesión</h2>
                         <p>Accede a tu panel de gestión</p>
                     </div>
 
-                    <!-- Alerta de error -->
                     @if (errorMensaje()) {
-                        <div class="spa-alert spa-alert-error">
+                        <div class="spa-alert spa-alert-error animate-shake">
                             <i class="pi pi-exclamation-circle"></i>
                             {{ errorMensaje() }}
                         </div>
                     }
 
-                    <!-- Formulario -->
                     <div class="spa-field">
                         <label for="email">Correo electrónico</label>
-                        <input
-                            id="email"
-                            pInputText
-                            type="email"
-                            placeholder="correo@ejemplo.com"
-                            [(ngModel)]="email"
-                            class="spa-input"
-                        />
+                        <span class="p-input-icon-left w-full">
+                            <i class="pi pi-envelope"></i>
+                            <input
+                                id="email"
+                                pInputText
+                                type="email"
+                                placeholder="correo@ejemplo.com"
+                                [(ngModel)]="email"
+                                class="spa-input"
+                            />
+                        </span>
                     </div>
 
                     <div class="spa-field">
@@ -86,8 +98,9 @@ import { AuthService } from '@/app/core/services/auth.service';
                             placeholder="Tu contraseña"
                             [toggleMask]="true"
                             [feedback]="false"
-                            [fluid]="true"
-                            styleClass="spa-input"
+                            styleClass="spa-password-input"
+                            inputStyleClass="spa-input-pass"
+                            [style]="{'width':'100%'}"
                         />
                     </div>
 
@@ -97,11 +110,16 @@ import { AuthService } from '@/app/core/services/auth.service';
                         styleClass="spa-btn-primary"
                         [disabled]="cargando()"
                         (onClick)="onLogin()"
-                    />
+                    >
+                        <ng-template pTemplate="icon">
+                            <i class="pi pi-sign-in mr-2" *ngIf="!cargando()"></i>
+                            <i class="pi pi-spin pi-spinner mr-2" *ngIf="cargando()"></i>
+                        </ng-template>
+                    </p-button>
 
                     <div class="spa-login-links">
                         <a routerLink="/auth/recuperar" class="spa-link">¿Olvidaste tu contraseña?</a>
-                        <span class="spa-divider">•</span>
+                        <span class="spa-divider"></span>
                         <a routerLink="/auth/registro" class="spa-link">Crear cuenta</a>
                     </div>
                 </div>
@@ -113,254 +131,226 @@ import { AuthService } from '@/app/core/services/auth.service';
             display: flex;
             min-height: 100vh;
             font-family: var(--spa-fuente);
+            background: #f8fafc;
         }
-
-        /* ── PANEL IZQUIERDO ──────────────────────────── */
         .spa-auth-left {
             flex: 1;
-            background: linear-gradient(145deg, var(--spa-primario) 0%, #1a9e97 60%, #0d6f6a 100%);
+            background: linear-gradient(135deg, var(--spa-primario) 0%, #1a9e97 60%, #0d6f6a 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 3rem 3.5rem;
+            padding: 3rem 4rem;
             color: #fff;
             position: relative;
             overflow: hidden;
         }
-
         .spa-auth-left::before {
             content: '';
             position: absolute;
-            top: -80px;
-            right: -80px;
-            width: 320px;
-            height: 320px;
+            top: -10%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.06);
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
         }
-
-        .spa-auth-left::after {
-            content: '';
-            position: absolute;
-            bottom: -100px;
-            left: -60px;
-            width: 260px;
-            height: 260px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.05);
-        }
-
         .spa-auth-brand {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            margin-bottom: 3rem;
+            margin-bottom: 4rem;
         }
-
-        .spa-paw {
-            font-size: 2rem;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        .spa-logo-icon {
+            font-size: 2.5rem;
+            color: var(--spa-acento);
+            filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.4));
         }
-
         .spa-brand-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 1.75rem;
+            font-weight: 800;
             color: #fff;
             letter-spacing: -0.02em;
+            margin: 0;
         }
-
         .spa-hero-title {
-            font-size: 2.4rem;
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 1.25rem;
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
             color: #fff;
         }
-
         .spa-hero-subtitle {
-            font-size: 1rem;
-            line-height: 1.7;
-            color: rgba(255,255,255,0.85);
-            margin-bottom: 2.5rem;
-            max-width: 420px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 3rem;
+            max-width: 450px;
         }
-
         .spa-features {
             list-style: none;
             padding: 0;
             margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.5rem;
         }
-
         .spa-features li {
             display: flex;
             align-items: center;
-            gap: 0.85rem;
-            font-size: 0.95rem;
-            color: rgba(255,255,255,0.9);
+            gap: 1rem;
+            font-size: 1rem;
+            font-weight: 500;
         }
-
         .spa-feature-icon {
-            font-size: 1.25rem;
-            width: 2.2rem;
-            height: 2.2rem;
-            border-radius: 50%;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 12px;
             background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.2rem;
             flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.2);
         }
-
-        /* ── PANEL DERECHO ───────────────────────────── */
         .spa-auth-right {
-            width: 480px;
+            width: 550px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: var(--spa-superficie);
             padding: 2rem;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.03);
         }
-
         .spa-login-card {
             width: 100%;
-            max-width: 380px;
+            max-width: 400px;
         }
-
-        .spa-login-header {
+        .spa-icon-badge {
+            width: 60px;
+            height: 60px;
+            background: var(--spa-capa1);
+            color: var(--spa-primario);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .spa-login-header h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--spa-texto);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        .spa-login-header p {
+            font-size: 1rem;
+            color: #64748b;
             margin-bottom: 2rem;
         }
-
-        .spa-login-header h2 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--spa-texto);
-            margin-bottom: 0.35rem;
-        }
-
-        .spa-login-header p {
-            font-size: 0.95rem;
-            color: rgba(8, 51, 68, 0.6);
-        }
-
         .spa-alert {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
             font-weight: 600;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
         }
-
-        .spa-alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
+        .spa-alert-error { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
         .spa-field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
         }
-
         .spa-field label {
-            font-size: 0.8rem;
+            display: block;
+            font-size: 0.85rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
             color: var(--spa-texto);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
         }
-
-        :host ::ng-deep .spa-input,
-        :host ::ng-deep .spa-input input,
-        :host ::ng-deep .p-password-input {
+        :host ::ng-deep .spa-input {
             width: 100% !important;
-            padding: 0.65rem 0.9rem !important;
-            border: 2px solid var(--spa-capa1) !important;
-            border-radius: 8px !important;
-            font-family: var(--spa-fuente) !important;
-            font-size: 0.95rem !important;
-            color: var(--spa-texto) !important;
-            background: var(--spa-superficie) !important;
-            transition: border-color 0.2s !important;
-            outline: none !important;
-            box-shadow: none !important;
+            padding: 0.8rem 1rem 0.8rem 2.5rem !important;
+            border: 2px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            font-size: 1rem !important;
+            transition: all 0.2s !important;
         }
-
-        :host ::ng-deep .spa-input:focus,
-        :host ::ng-deep .spa-input input:focus,
-        :host ::ng-deep .p-password-input:focus {
+        :host ::ng-deep .spa-input:focus {
             border-color: var(--spa-primario) !important;
+            box-shadow: 0 0 0 4px rgba(32, 178, 170, 0.1) !important;
+        }
+        
+        :host ::ng-deep .spa-password-input { width: 100%; }
+        :host ::ng-deep .spa-input-pass {
+            width: 100% !important;
+            padding: 0.8rem 1rem !important;
+            border: 2px solid #e2e8f0 !important;
+            border-radius: 12px !important;
         }
 
         :host ::ng-deep .spa-btn-primary {
             width: 100%;
+            height: 3.5rem;
             background: var(--spa-primario) !important;
-            border-color: var(--spa-primario) !important;
-            border-radius: 8px !important;
+            border: none !important;
+            border-radius: 12px !important;
             font-weight: 700 !important;
-            font-size: 0.95rem !important;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 0.75rem 1.5rem !important;
-            margin-top: 0.5rem;
-            transition: opacity 0.2s !important;
+            font-size: 1rem !important;
+            letter-spacing: 0.025em;
+            transition: all 0.3s !important;
+            box-shadow: 0 4px 12px rgba(32, 178, 170, 0.2) !important;
         }
-
         :host ::ng-deep .spa-btn-primary:hover:not(:disabled) {
-            opacity: 0.88 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(32, 178, 170, 0.3) !important;
         }
-
-        :host ::ng-deep .spa-btn-primary:disabled {
-            opacity: 0.5 !important;
-        }
-
         .spa-login-links {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
+            gap: 1.5rem;
+            margin-top: 2rem;
         }
-
         .spa-link {
-            color: var(--spa-primario);
-            font-size: 0.875rem;
+            color: #64748b;
             font-weight: 600;
             text-decoration: none;
-            transition: opacity 0.2s;
+            font-size: 0.95rem;
+            transition: color 0.2s;
         }
-
-        .spa-link:hover {
-            opacity: 0.75;
-            text-decoration: underline;
-        }
-
+        .spa-link:hover { color: var(--spa-primario); }
         .spa-divider {
-            color: rgba(8, 51, 68, 0.3);
-            font-size: 0.75rem;
+            width: 1px;
+            height: 14px;
+            background: #e2e8f0;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .spa-auth-wrapper {
-                flex-direction: column;
-            }
-            .spa-auth-left {
-                padding: 2rem 1.5rem;
-            }
-            .spa-hero-title {
-                font-size: 1.75rem;
-            }
-            .spa-auth-right {
-                width: 100%;
-                padding: 2rem 1.5rem;
-            }
+        /* Animations */
+        .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out both; }
+        .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        @media (max-width: 992px) {
+            .spa-auth-wrapper { flex-direction: column; }
+            .spa-auth-left { padding: 3rem 2rem; min-height: auto; }
+            .spa-auth-right { width: 100%; padding: 3rem 2rem; }
+            .spa-hero-title { font-size: 2.2rem; }
         }
     `]
 })
