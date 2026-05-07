@@ -6,5 +6,5 @@ import lombok.Data;
 @Data
 public class LoginRequest {
     private String email;
-    private String contrasenia; // "ni" en lugar de "ñ"
+    private String contrasenia;
 }
