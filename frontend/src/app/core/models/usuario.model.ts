@@ -3,6 +3,7 @@ export interface AuthResponse {
   token: string;
   email: string;
   mensaje: string;
+  rol: string;
 }
 
 // Datos que el usuario escribe para hacer login

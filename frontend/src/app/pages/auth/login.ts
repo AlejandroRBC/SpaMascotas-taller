@@ -385,8 +385,22 @@ export class Login {
 
         this.authService.login({ email: this.email, contrasenia: this.contrasenia }).subscribe({
             next: (respuesta) => {
-                this.authService.guardarToken(respuesta.token);
-                this.router.navigate(['/']);
+                this.authService.guardarSesion(respuesta.token, respuesta.rol);
+                
+                // Redirección según rol
+                switch (respuesta.rol) {
+                    case 'ADMIN':
+                        this.router.navigate(['/']);
+                        break;
+                    case 'EMPLEADO':
+                        this.router.navigate(['/auth/empleado']);
+                        break;
+                    case 'CLIENTE':
+                        this.router.navigate(['/auth/cliente']);
+                        break;
+                    default:
+                        this.router.navigate(['/']);
+                }
             },
             error: (err) => {
                 this.errorMensaje.set(err.error?.error || 'Error al iniciar sesión');

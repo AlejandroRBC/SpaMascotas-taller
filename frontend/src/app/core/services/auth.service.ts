@@ -15,6 +15,18 @@ export class AuthService {
 
     // Clave del token en localStorage
     private TOKEN_KEY = 'spa_token';
+    private ROL_KEY = 'spa_rol';
+
+    // Guarda el token y el rol en localStorage
+    guardarSesion(token: string, rol: string): void {
+        localStorage.setItem(this.TOKEN_KEY, token);
+        localStorage.setItem(this.ROL_KEY, rol);
+    }
+
+    // Obtiene el rol guardado
+    obtenerRol(): string | null {
+        return localStorage.getItem(this.ROL_KEY);
+    }
 
     // Llama al backend para iniciar sesión
     login(datos: LoginRequest) {
@@ -53,6 +65,7 @@ export class AuthService {
     // Cierra sesión: borra el token y redirige al login
     cerrarSesion(): void {
         localStorage.removeItem(this.TOKEN_KEY);
+        localStorage.removeItem(this.ROL_KEY);
         this.router.navigate(['/auth/login']);
     }
 }

@@ -29,6 +29,28 @@ public class Usuario {
     @Column(name = "creado_el")
     private LocalDateTime creadoEl;
 
+    // --- Campos para 2FA y Recuperación ---
+    @Column(name = "codigo_recuperacion")
+    private String codigoRecuperacion;
+
+    @Column(name = "codigo_recuperacion_expiracion")
+    private LocalDateTime codigoRecuperacionExpiracion;
+
+    @Column(name = "dos_factor_secret")
+    private String dosFactorSecret;
+
+    @Column(name = "dos_factor_habilitado")
+    private boolean dosFactorHabilitado = false;
+
+    // --- Relación con Roles ---
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "usuario_roles",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "rol_id")
+    )
+    private java.util.Set<Rol> roles = new java.util.HashSet<>();
+
     // Se ejecuta automáticamente antes de guardar en la BD
     @PrePersist
     public void antesDeGuardar() {
