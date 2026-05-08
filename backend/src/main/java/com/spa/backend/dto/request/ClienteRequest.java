@@ -3,10 +3,11 @@ package com.spa.backend.dto.request;
 import lombok.Data;
 
 @Data
-public class EmpleadoRequest {
+public class ClienteRequest {
     private Long id;
+    private String ci;
     private String nombre;
-    private String rol;
+    private String telefono;
     private boolean activo;
-    private String email; // Para vincular/crear usuario
+    private String email;
 }

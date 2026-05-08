@@ -18,9 +18,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import com.spa.backend.service.interfaces.SystemLogService;
 import java.util.List;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class EmpleadoServiceImpl implements EmpleadoService {
 
     private final EmpleadoRepository empleadoRepository;
@@ -52,7 +55,6 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         }
 
         empleado.setNombre(request.getNombre());
-        empleado.setPuesto(request.getPuesto());
         empleado.setActivo(request.isActivo());
 
         // Manejo del Usuario asociado
@@ -64,13 +66,18 @@ public class EmpleadoServiceImpl implements EmpleadoService {
                         // Contraseña por defecto para empleados nuevos: "Empleado123!"
                         nuevoUsuario.setPasswordHash(passwordEncoder.encode("Empleado123!"));
                         nuevoUsuario.setEstado("activo");
-                        
-                        Rol rolEmpleado = rolRepository.findByNombre("EMPLEADO")
-                                .orElseGet(() -> rolRepository.save(new Rol(null, "EMPLEADO")));
-                        nuevoUsuario.getRoles().add(rolEmpleado);
-                        
                         return usuarioRepository.save(nuevoUsuario);
                     });
+                    
+            if (request.getRol() != null && !request.getRol().isEmpty()) {
+                String nombreRol = request.getRol().toUpperCase();
+                Rol rolEmpleado = rolRepository.findByNombre(nombreRol)
+                        .orElseGet(() -> rolRepository.save(new Rol(null, nombreRol)));
+                
+                usuario.getRoles().clear();
+                usuario.getRoles().add(rolEmpleado);
+                usuarioRepository.save(usuario);
+            }
             empleado.setUsuario(usuario);
         }
 

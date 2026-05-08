@@ -2,10 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export interface Empleado {
+export interface Cliente {
     id?: number;
+    ci: string;
     nombre: string;
-    rol?: string;
+    telefono?: string;
     activo: boolean;
     email?: string;
     usuario?: {
@@ -18,16 +19,16 @@ export interface Empleado {
 @Injectable({
     providedIn: 'root'
 })
-export class EmpleadoService {
+export class ClienteService {
     private http = inject(HttpClient);
-    private apiUrl = 'http://localhost:8080/api/empleados';
+    private apiUrl = 'http://localhost:8080/api/clientes';
 
-    listar(): Observable<Empleado[]> {
-        return this.http.get<Empleado[]>(this.apiUrl);
+    listar(): Observable<Cliente[]> {
+        return this.http.get<Cliente[]>(this.apiUrl);
     }
 
-    guardar(empleado: Empleado): Observable<Empleado> {
-        return this.http.post<Empleado>(this.apiUrl, empleado);
+    guardar(cliente: Cliente): Observable<Cliente> {
+        return this.http.post<Cliente>(this.apiUrl, cliente);
     }
 
     eliminar(id: number): Observable<void> {

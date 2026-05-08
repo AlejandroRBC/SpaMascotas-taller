@@ -4,17 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service';
-import { SystemLog, LogService } from '@/app/core/services/log.service';
+import { Rol, RolService } from '@/app/core/services/rol.service';
 
 @Component({
     selector: 'app-empleados',
     standalone: true,
-    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToolbarModule, ToastModule],
+    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToolbarModule, ToastModule, SelectModule],
     providers: [MessageService],
     template: `
         <div class="card">
@@ -25,11 +26,16 @@ import { SystemLog, LogService } from '@/app/core/services/log.service';
                 </ng-template>
             </p-toolbar>
 
-            <p-table #dt [value]="empleados()" [rows]="10" [paginator]="true" [responsiveLayout]="'scroll'"
-                     [globalFilterFields]="['nombre', 'puesto']" [rowHover]="true" dataKey="id">
+            <div class="flex gap-2 mb-4">
+                <p-button [severity]="currentTab() === 'RECEPCIONISTA' ? 'primary' : 'secondary'" label="Recepcionistas" (onClick)="currentTab.set('RECEPCIONISTA')" />
+                <p-button [severity]="currentTab() === 'GROOMER' ? 'primary' : 'secondary'" label="Groomers" (onClick)="currentTab.set('GROOMER')" />
+            </div>
+
+            <p-table #dt [value]="filteredEmpleados()" [rows]="10" [paginator]="true" [responsiveLayout]="'scroll'"
+                     [globalFilterFields]="['nombre', 'email']" [rowHover]="true" dataKey="id">
                 <ng-template pTemplate="caption">
                     <div class="flex align-items-center justify-content-between">
-                        <h5 class="m-0">Gestión de Empleados</h5>
+                        <h5 class="m-0">Gestión de {{ currentTab() === 'RECEPCIONISTA' ? 'Recepcionistas' : 'Groomers' }}</h5>
                         <span class="p-input-icon-left">
                             <i class="pi pi-search"></i>
                             <input pInputText type="text" placeholder="Buscar..." (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
@@ -40,7 +46,6 @@ import { SystemLog, LogService } from '@/app/core/services/log.service';
                     <tr>
                         <th>Nombre</th>
                         <th>Email</th>
-                        <th>Puesto</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -49,7 +54,6 @@ import { SystemLog, LogService } from '@/app/core/services/log.service';
                     <tr>
                         <td>{{ empleado.nombre }}</td>
                         <td>{{ empleado.usuario?.email || empleado.email }}</td>
-                        <td>{{ empleado.puesto }}</td>
                         <td>
                             <span [class]="'customer-badge status-' + (empleado.activo ? 'qualified' : 'unqualified')">
                                 {{ empleado.activo ? 'ACTIVO' : 'INACTIVO' }}
@@ -58,41 +62,6 @@ import { SystemLog, LogService } from '@/app/core/services/log.service';
                         <td>
                             <p-button icon="pi pi-pencil" [rounded]="true" severity="success" class="mr-2" (onClick)="editEmpleado(empleado)" />
                             <p-button icon="pi pi-trash" [rounded]="true" severity="danger" (onClick)="deleteEmpleado(empleado)" />
-                        </td>
-                    </tr>
-                </ng-template>
-            </p-table>
-        </div>
-
-        <div class="card mt-5">
-            <p-table #dtLogs [value]="logs()" [rows]="10" [paginator]="true" [responsiveLayout]="'scroll'"
-                     [globalFilterFields]="['usuarioInfo', 'accion', 'ipAddress']" [rowHover]="true" dataKey="id">
-                <ng-template pTemplate="caption">
-                    <div class="flex align-items-center justify-content-between">
-                        <h5 class="m-0">Registro de Eventos del Sistema (Logs)</h5>
-                        <span class="p-input-icon-left">
-                            <i class="pi pi-search"></i>
-                            <input pInputText type="text" placeholder="Buscar en logs..." (input)="dtLogs.filterGlobal($any($event.target).value, 'contains')" />
-                        </span>
-                    </div>
-                </ng-template>
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th>Fecha y Hora</th>
-                        <th>Usuario (ID - Rol)</th>
-                        <th>Acción</th>
-                        <th>IP Address</th>
-                        <th>Navegador</th>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-log>
-                    <tr>
-                        <td>{{ log.fechaHora | date:'medium' }}</td>
-                        <td>{{ log.usuarioInfo }}</td>
-                        <td><span class="font-bold text-primary">{{ log.accion }}</span></td>
-                        <td>{{ log.ipAddress }}</td>
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="log.userAgent">
-                            {{ log.userAgent }}
                         </td>
                     </tr>
                 </ng-template>
@@ -110,8 +79,8 @@ import { SystemLog, LogService } from '@/app/core/services/log.service';
                     <input type="email" pInputText id="email" [(ngModel)]="empleado.email" required />
                 </div>
                 <div class="field">
-                    <label for="puesto">Puesto</label>
-                    <input type="text" pInputText id="puesto" [(ngModel)]="empleado.puesto" required />
+                    <label for="rol">Rol (Puesto)</label>
+                    <p-select [options]="rolesList()" [(ngModel)]="empleado.rol" optionLabel="nombre" optionValue="nombre" placeholder="Seleccione un rol" appendTo="body" styleClass="w-full"></p-select>
                 </div>
             </ng-template>
 
@@ -124,28 +93,36 @@ import { SystemLog, LogService } from '@/app/core/services/log.service';
 })
 export class Empleados implements OnInit {
     private empleadoService = inject(EmpleadoService);
-    private logService = inject(LogService);
+    private rolService = inject(RolService);
     private messageService = inject(MessageService);
 
     empleados = signal<Empleado[]>([]);
-    logs = signal<SystemLog[]>([]);
-    empleado: Empleado = { nombre: '', puesto: '', activo: true };
+    rolesList = signal<Rol[]>([]);
+    currentTab = signal<'RECEPCIONISTA' | 'GROOMER'>('RECEPCIONISTA');
+    
+    empleado: Empleado = { nombre: '', rol: '', activo: true };
     empleadoDialog = signal(false);
 
     ngOnInit() {
         this.loadEmpleados();
-        this.loadLogs();
+        this.loadRoles();
     }
 
-    loadLogs() {
-        this.logService.listar().subscribe({
+    loadRoles() {
+        this.rolService.listar().subscribe({
             next: (data) => {
-                this.logs.set(data);
+                // Filtrar solo los roles que nos interesan para empleados o mostrar todos
+                const rolesFiltrados = data.filter(r => r.nombre === 'RECEPCIONISTA' || r.nombre === 'GROOMER');
+                this.rolesList.set(rolesFiltrados);
             },
-            error: (err) => {
-                console.error('Error al cargar logs:', err);
-                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los logs' });
-            }
+            error: (err) => console.error(err)
+        });
+    }
+
+    filteredEmpleados() {
+        return this.empleados().filter(emp => {
+            const roleName = emp.usuario?.roles?.[0]?.nombre;
+            return roleName === this.currentTab();
         });
     }
 
@@ -163,12 +140,13 @@ export class Empleados implements OnInit {
     }
 
     openNew() {
-        this.empleado = { nombre: '', puesto: '', activo: true, email: '' };
+        this.empleado = { nombre: '', rol: this.currentTab(), activo: true, email: '' };
         this.empleadoDialog.set(true);
     }
 
     editEmpleado(empleado: Empleado) {
-        this.empleado = { ...empleado, email: empleado.usuario?.email };
+        const roleName = empleado.usuario?.roles?.[0]?.nombre || '';
+        this.empleado = { ...empleado, email: empleado.usuario?.email, rol: roleName };
         this.empleadoDialog.set(true);
     }
 

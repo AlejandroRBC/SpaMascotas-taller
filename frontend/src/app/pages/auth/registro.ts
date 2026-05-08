@@ -6,12 +6,16 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { CommonModule } from '@angular/common';
+import { MessageService } from 'primeng/api';
 import { AuthService } from '@/app/core/services/auth.service';
+import { ClienteService } from '@/app/core/services/cliente.service';
+import { DialogModule } from 'primeng/dialog';
 
 @Component({
     selector: 'app-registro',
     standalone: true,
-    imports: [ButtonModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, CommonModule],
+    imports: [ButtonModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, CommonModule, DialogModule],
+    providers: [MessageService],
     template: `
         <div class="spa-auth-wrapper">
             <!-- PANEL IZQUIERDO -->
@@ -152,6 +156,41 @@ import { AuthService } from '@/app/core/services/auth.service';
                 </div>
             </div>
         </div>
+
+        <p-dialog 
+            header="Datos Personales del Cliente" 
+            [(visible)]="mostrarDialogCliente" 
+            [modal]="true" 
+            [closable]="false"
+            [style]="{ width: '450px' }"
+            styleClass="p-fluid"
+        >
+            <ng-template pTemplate="content">
+                <p class="mb-4">Para terminar tu registro como cliente, por favor completa tus datos personales:</p>
+                <div class="field mb-4">
+                    <label for="ci" class="font-bold block mb-2">Cédula de Identidad (CI)</label>
+                    <input id="ci" pInputText [(ngModel)]="ci" placeholder="Ej: 1234567" />
+                </div>
+                <div class="field mb-4">
+                    <label for="nombreC" class="font-bold block mb-2">Nombre Completo</label>
+                    <input id="nombreC" pInputText [(ngModel)]="nombreCompleto" placeholder="Tu nombre y apellidos" />
+                </div>
+                <div class="field mb-4">
+                    <label for="tel" class="font-bold block mb-2">Teléfono</label>
+                    <input id="tel" pInputText [(ngModel)]="telefono" placeholder="Ej: 77889900" />
+                </div>
+            </ng-template>
+
+            <ng-template pTemplate="footer">
+                <p-button 
+                    label="Finalizar Registro" 
+                    icon="pi pi-check" 
+                    (onClick)="finalizarRegistroCliente()" 
+                    [disabled]="!ci || !nombreCompleto"
+                    styleClass="spa-btn-primary"
+                />
+            </ng-template>
+        </p-dialog>
     `,
     styles: [`
         .spa-auth-wrapper {
@@ -414,12 +453,19 @@ import { AuthService } from '@/app/core/services/auth.service';
 })
 export class Registro {
     private authService = inject(AuthService);
+    private clienteService = inject(ClienteService);
     private router = inject(Router);
 
     email = '';
     contrasenia = '';
     confirmarContrasenia = '';
     rol = 'CLIENTE';
+
+    // Datos del cliente
+    mostrarDialogCliente = false;
+    ci = '';
+    nombreCompleto = '';
+    telefono = '';
 
     cargando = signal(false);
     errorMensaje = signal('');
@@ -450,12 +496,37 @@ export class Registro {
         }).subscribe({
             next: (respuesta) => {
                 this.authService.guardarSesion(respuesta.token, respuesta.rol);
-                this.router.navigate(['/']);
+                
+                if (this.rol === 'CLIENTE') {
+                    this.cargando.set(false);
+                    this.mostrarDialogCliente = true;
+                } else {
+                    this.router.navigate(['/']);
+                }
             },
             error: (err) => {
                 this.errorMensaje.set(err.error?.error || 'Error al registrarse');
                 this.cargando.set(false);
             },
+        });
+    }
+
+    finalizarRegistroCliente() {
+        this.cargando.set(true);
+        this.clienteService.guardar({
+            ci: this.ci,
+            nombre: this.nombreCompleto,
+            telefono: this.telefono,
+            activo: true,
+            email: this.email
+        }).subscribe({
+            next: () => {
+                this.router.navigate(['/']);
+            },
+            error: (err) => {
+                this.errorMensaje.set('Cuenta creada, pero hubo un error al guardar tus datos personales. Puedes completarlos luego.');
+                this.router.navigate(['/']);
+            }
         });
     }
 }

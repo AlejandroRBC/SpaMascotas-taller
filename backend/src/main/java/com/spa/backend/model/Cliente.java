@@ -6,23 +6,26 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Entity
-@Table(name = "empleados")
+@Table(name = "clientes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Empleado {
+public class Cliente {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "empleados_id_seq")
-    @SequenceGenerator(name = "empleados_id_seq", sequenceName = "empleados_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true)
     private Usuario usuario;
 
+    @Column(nullable = false, unique = true)
+    private String ci;
+
     @Column(nullable = false)
     private String nombre;
 
+    private String telefono;
+    
     private boolean activo = true;
-
 }

@@ -15,8 +15,10 @@ export const appRoutes: Routes = [
             { path: '', component: Dashboard },
             { path: 'uikit', loadChildren: () => import('./app/pages/uikit/uikit.routes') },
             { path: 'documentation', component: Documentation },
-            { path: 'empleados', loadComponent: () => import('./app/pages/empleados/empleados').then(m => m.Empleados) },
-            { path: 'pages', loadChildren: () => import('./app/pages/pages.routes') }
+            { path: 'empleados', loadComponent: () => import('@/app/pages/empleados/empleados').then(m => m.Empleados) },
+            { path: 'clientes', loadComponent: () => import('@/app/pages/clientes/clientes').then(m => m.Clientes) },
+            { path: 'logs', loadComponent: () => import('@/app/pages/logs/logs').then(m => m.Logs) },
+            { path: 'pages', loadChildren: () => import('@/app/pages/pages.routes') }
         ]
     },
     { path: 'landing', component: Landing },
