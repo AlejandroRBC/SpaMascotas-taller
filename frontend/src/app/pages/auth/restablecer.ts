@@ -73,9 +73,42 @@ import { AuthService } from '@/app/core/services/auth.service';
 
                     <div class="spa-field">
                         <label>Nueva Contraseña</label>
-                        <p-password [(ngModel)]="nuevaContrasenia" [toggleMask]="true" [feedback]="true" 
-                                    placeholder="Mínimo 6 caracteres" styleClass="spa-password-input" 
-                                    inputStyleClass="spa-input-pass" [style]="{'width':'100%'}"/>
+                        <p-password [(ngModel)]="nuevaContrasenia" 
+                                    [toggleMask]="true" 
+                                    [feedback]="true" 
+                                    promptLabel="Ingresa una contraseña"
+                                    weakLabel="Débil"
+                                    mediumLabel="Media"
+                                    strongLabel="Fuerte"
+                                    placeholder="Mínimo 8 caracteres" 
+                                    styleClass="spa-password-input" 
+                                    inputStyleClass="spa-input-pass" 
+                                    [style]="{'width':'100%'}">
+                            <ng-template pTemplate="footer">
+                                <div class="mt-3">
+                                    <p class="text-sm font-semibold mb-2 text-gray-700" style="font-size: 0.85rem; color: #334155;">
+                                        Sugerencia proactiva: Usa <strong class="text-teal-600">Passphrases</strong> (frases de 3 o 4 palabras) para mayor seguridad.
+                                    </p>
+                                    <ul class="pl-0 m-0 flex flex-column gap-1" style="list-style-type: none; font-size: 0.8rem;">
+                                        <li [ngStyle]="{'color': tieneLongitud() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneLongitud() ? 'pi-check-circle' : 'pi-circle'"></i> Mínimo 8 caracteres
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneMayuscula() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneMayuscula() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos una mayúscula
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneMinuscula() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneMinuscula() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos una minúscula
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneNumero() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneNumero() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos un número
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneSimbolo() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneSimbolo() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos un símbolo (*, #, !, etc.)
+                                        </li>
+                                    </ul>
+                                </div>
+                            </ng-template>
+                        </p-password>
                     </div>
 
                     <p-button label="ACTUALIZAR CONTRASEÑA" styleClass="spa-btn-primary" [disabled]="cargando()" (onClick)="onRestablecer()">
@@ -333,6 +366,16 @@ export class Restablecer {
     errorMensaje = signal('');
     exitoMensaje = signal('');
 
+    tieneLongitud = () => this.nuevaContrasenia.length >= 8;
+    tieneMayuscula = () => /[A-Z]/.test(this.nuevaContrasenia);
+    tieneMinuscula = () => /[a-z]/.test(this.nuevaContrasenia);
+    tieneNumero = () => /\d/.test(this.nuevaContrasenia);
+    tieneSimbolo = () => /[!@#$%^&*(),.?":{}|<>\-_+/=~`]/.test(this.nuevaContrasenia);
+
+    esPasswordValido = () => {
+        return this.tieneLongitud() && this.tieneMayuscula() && this.tieneMinuscula() && this.tieneNumero() && this.tieneSimbolo();
+    }
+
     ngOnInit() {
         this.route.queryParams.subscribe(params => {
             this.email = params['email'] || '';
@@ -342,6 +385,16 @@ export class Restablecer {
     onRestablecer() {
         if (!this.codigo || !this.nuevaContrasenia) {
             this.errorMensaje.set('Completa todos los campos');
+            return;
+        }
+
+        if (this.nuevaContrasenia.length < 8) {
+            this.errorMensaje.set('La contraseña debe tener al menos 8 caracteres');
+            return;
+        }
+
+        if (!this.esPasswordValido()) {
+            this.errorMensaje.set('La contraseña no cumple con los requisitos de complejidad');
             return;
         }
 

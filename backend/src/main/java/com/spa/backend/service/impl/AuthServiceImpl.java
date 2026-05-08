@@ -109,9 +109,23 @@ public class AuthServiceImpl implements AuthService {
         usuarioRepository.save(usuario);
 
         // Enviar correo
-        String cuerpo = "Hola,\n\nTu código de recuperación para Spa Mascotas es: " + codigo + 
+        String cuerpo = "Este codigo de confirmacion es enviado a " + email + "\n\n" +
+                        "Hola,\n\nTu código de recuperación para Spa Mascotas es: " + codigo + 
                         "\n\nEste código expirará en 15 minutos.";
-        emailService.enviarEmail(email, "Código de Recuperación - Spa Mascotas", cuerpo);
+
+        /* 
+         * =========================================================================
+         * ATENCION: ENTORNO DE PRUEBAS
+         * Para usar el correo real del usuario en producción, se debe cambiar la
+         * siguiente línea para que use la variable 'email' en lugar del correo
+         * hardcodeado 'abernasc@fcpn.edu.bo'.
+         * =========================================================================
+         */
+        try {
+            emailService.enviarEmail("abernasc@fcpn.edu.bo", "Código de Recuperación - Spa Mascotas", cuerpo);
+        } catch (Exception e) {
+            System.err.println("Advertencia: No se pudo enviar el correo en entorno local. " + e.getMessage());
+        }
 
         return "Se envió un código de recuperación al correo: " + email;
     }

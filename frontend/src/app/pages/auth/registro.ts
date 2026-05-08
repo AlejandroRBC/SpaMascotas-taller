@@ -99,13 +99,42 @@ import { DialogModule } from 'primeng/dialog';
                         <p-password
                             id="reg-contrasenia"
                             [(ngModel)]="contrasenia"
-                            placeholder="Mínimo 6 caracteres"
+                            placeholder="Mínimo 8 caracteres"
                             [toggleMask]="true"
-                            [feedback]="false"
+                            [feedback]="true"
+                            promptLabel="Ingresa una contraseña"
+                            weakLabel="Débil"
+                            mediumLabel="Media"
+                            strongLabel="Fuerte"
                             styleClass="spa-password-input"
                             inputStyleClass="spa-input-pass"
                             [style]="{'width':'100%'}"
-                        />
+                        >
+                            <ng-template pTemplate="footer">
+                                <div class="mt-3">
+                                    <p class="text-sm font-semibold mb-2 text-gray-700" style="font-size: 0.85rem; color: #334155;">
+                                        Sugerencia proactiva: Usa <strong class="text-teal-600">Passphrases</strong> (frases de 3 o 4 palabras) para mayor seguridad.
+                                    </p>
+                                    <ul class="pl-0 m-0 flex flex-column gap-1" style="list-style-type: none; font-size: 0.8rem;">
+                                        <li [ngStyle]="{'color': tieneLongitud() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneLongitud() ? 'pi-check-circle' : 'pi-circle'"></i> Mínimo 8 caracteres
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneMayuscula() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneMayuscula() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos una mayúscula
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneMinuscula() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneMinuscula() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos una minúscula
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneNumero() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneNumero() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos un número
+                                        </li>
+                                        <li [ngStyle]="{'color': tieneSimbolo() ? '#16a34a' : '#64748b'}">
+                                            <i class="pi" [ngClass]="tieneSimbolo() ? 'pi-check-circle' : 'pi-circle'"></i> Al menos un símbolo (*, #, !, etc.)
+                                        </li>
+                                    </ul>
+                                </div>
+                            </ng-template>
+                        </p-password>
                     </div>
 
                     <div class="spa-field">
@@ -470,6 +499,16 @@ export class Registro {
     cargando = signal(false);
     errorMensaje = signal('');
 
+    tieneLongitud = () => this.contrasenia.length >= 8;
+    tieneMayuscula = () => /[A-Z]/.test(this.contrasenia);
+    tieneMinuscula = () => /[a-z]/.test(this.contrasenia);
+    tieneNumero = () => /\d/.test(this.contrasenia);
+    tieneSimbolo = () => /[!@#$%^&*(),.?":{}|<>\-_+/=~`]/.test(this.contrasenia);
+
+    esPasswordValido = () => {
+        return this.tieneLongitud() && this.tieneMayuscula() && this.tieneMinuscula() && this.tieneNumero() && this.tieneSimbolo();
+    }
+
     onRegistrar() {
         if (!this.email || !this.contrasenia || !this.confirmarContrasenia) {
             this.errorMensaje.set('Todos los campos son obligatorios');
@@ -481,8 +520,13 @@ export class Registro {
             return;
         }
 
-        if (this.contrasenia.length < 6) {
-            this.errorMensaje.set('La contraseña debe tener al menos 6 caracteres');
+        if (this.contrasenia.length < 8) {
+            this.errorMensaje.set('La contraseña debe tener al menos 8 caracteres');
+            return;
+        }
+
+        if (!this.esPasswordValido()) {
+            this.errorMensaje.set('La contraseña no cumple con los requisitos de complejidad');
             return;
         }
 
