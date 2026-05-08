@@ -16,6 +16,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
+import com.spa.backend.service.interfaces.SystemLogService;
 import java.time.LocalDateTime;
 
 @Service
@@ -28,6 +32,12 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authManager;
     private final EmailService emailService;
+    private final SystemLogService systemLogService;
+
+    private HttpServletRequest getCurrentRequest() {
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        return attrs != null ? attrs.getRequest() : null;
+    }
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -42,6 +52,8 @@ public class AuthServiceImpl implements AuthService {
                 .map(Rol::getNombre)
                 .findFirst()
                 .orElse("CLIENTE");
+
+        systemLogService.logEvent(usuario.getId() + " - " + rol, "Intento de inicio de sesión exitoso", getCurrentRequest());
 
         return new AuthResponse(token, request.getEmail(), "Login exitoso", rol);
     }
@@ -76,6 +88,9 @@ public class AuthServiceImpl implements AuthService {
         usuarioRepository.save(nuevoUsuario);
 
         String token = jwtUtil.generarToken(request.getEmail());
+        
+        systemLogService.logEvent(nuevoUsuario.getId() + " - " + finalRol, "Registro de usuario", getCurrentRequest());
+        
         return new AuthResponse(token, request.getEmail(), "Registro exitoso", finalRol);
     }
 
@@ -119,6 +134,9 @@ public class AuthServiceImpl implements AuthService {
         usuario.setCodigoRecuperacion(null);
         usuario.setCodigoRecuperacionExpiracion(null);
         usuarioRepository.save(usuario);
+
+        String rol = usuario.getRoles().stream().map(Rol::getNombre).findFirst().orElse("CLIENTE");
+        systemLogService.logEvent(usuario.getId() + " - " + rol, "Cambio de clave", getCurrentRequest());
 
         return "Contraseña actualizada exitosamente";
     }

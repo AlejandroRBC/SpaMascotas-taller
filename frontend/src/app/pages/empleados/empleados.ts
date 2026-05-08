@@ -9,6 +9,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service';
+import { SystemLog, LogService } from '@/app/core/services/log.service';
 
 @Component({
     selector: 'app-empleados',
@@ -63,6 +64,41 @@ import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service'
             </p-table>
         </div>
 
+        <div class="card mt-5">
+            <p-table #dtLogs [value]="logs()" [rows]="10" [paginator]="true" [responsiveLayout]="'scroll'"
+                     [globalFilterFields]="['usuarioInfo', 'accion', 'ipAddress']" [rowHover]="true" dataKey="id">
+                <ng-template pTemplate="caption">
+                    <div class="flex align-items-center justify-content-between">
+                        <h5 class="m-0">Registro de Eventos del Sistema (Logs)</h5>
+                        <span class="p-input-icon-left">
+                            <i class="pi pi-search"></i>
+                            <input pInputText type="text" placeholder="Buscar en logs..." (input)="dtLogs.filterGlobal($any($event.target).value, 'contains')" />
+                        </span>
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Usuario (ID - Rol)</th>
+                        <th>Acción</th>
+                        <th>IP Address</th>
+                        <th>Navegador</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-log>
+                    <tr>
+                        <td>{{ log.fechaHora | date:'medium' }}</td>
+                        <td>{{ log.usuarioInfo }}</td>
+                        <td><span class="font-bold text-primary">{{ log.accion }}</span></td>
+                        <td>{{ log.ipAddress }}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="log.userAgent">
+                            {{ log.userAgent }}
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+
         <p-dialog [visible]="empleadoDialog()" (visibleChange)="empleadoDialog.set($event)" [style]="{ width: '450px' }" header="Detalles del Empleado" [modal]="true" styleClass="p-fluid">
             <ng-template pTemplate="content">
                 <div class="field">
@@ -88,14 +124,29 @@ import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service'
 })
 export class Empleados implements OnInit {
     private empleadoService = inject(EmpleadoService);
+    private logService = inject(LogService);
     private messageService = inject(MessageService);
 
     empleados = signal<Empleado[]>([]);
+    logs = signal<SystemLog[]>([]);
     empleado: Empleado = { nombre: '', puesto: '', activo: true };
     empleadoDialog = signal(false);
 
     ngOnInit() {
         this.loadEmpleados();
+        this.loadLogs();
+    }
+
+    loadLogs() {
+        this.logService.listar().subscribe({
+            next: (data) => {
+                this.logs.set(data);
+            },
+            error: (err) => {
+                console.error('Error al cargar logs:', err);
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los logs' });
+            }
+        });
     }
 
     loadEmpleados() {
