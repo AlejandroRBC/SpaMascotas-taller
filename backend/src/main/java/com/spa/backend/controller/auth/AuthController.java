@@ -39,4 +39,10 @@ public class AuthController {
     public ResponseEntity<String> restablecer(@RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.restablecerContrasenia(request));
     }
+
+    // POST /api/auth/enviar-codigo-registro?email=xxx@xxx.com
+    @PostMapping("/enviar-codigo-registro")
+    public ResponseEntity<String> enviarCodigoRegistro(@RequestParam String email) {
+        return ResponseEntity.ok(authService.enviarCodigoRegistro(email));
+    }
 }

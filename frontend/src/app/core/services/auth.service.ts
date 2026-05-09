@@ -47,6 +47,15 @@ export class AuthService {
         );
     }
 
+    // Llama al backend para enviar código de verificación de registro (para ADMIN)
+    enviarCodigoRegistro(email: string) {
+        return this.http.post<string>(
+            `${this.apiUrl}/enviar-codigo-registro?email=${email}`,
+            {},
+            { responseType: 'text' as 'json' }
+        );
+    }
+
     // Llama al backend para restablecer contraseña con el código
     restablecerContrasenia(datos: { email: string; codigo: string; nuevaContrasenia: string }) {
         return this.http.post<string>(

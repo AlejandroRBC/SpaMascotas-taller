@@ -10,4 +10,5 @@ public interface AuthService {
     AuthResponse registrar(RegisterRequest request);
     String recuperarContrasenia(String email);
     String restablecerContrasenia(ResetPasswordRequest request);
+    String enviarCodigoRegistro(String email);
 }

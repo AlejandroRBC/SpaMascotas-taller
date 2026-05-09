@@ -220,6 +220,37 @@ import { DialogModule } from 'primeng/dialog';
                 />
             </ng-template>
         </p-dialog>
+
+        <p-dialog 
+            header="Verificación de Administrador" 
+            [(visible)]="mostrarDialogVerificacion" 
+            [modal]="true" 
+            [closable]="false"
+            [style]="{ width: '400px' }"
+        >
+            <div class="p-fluid">
+                <p class="mb-4">Se ha enviado un código de verificación a tu correo para validar tu identidad como administrador.</p>
+                <div class="field mb-4">
+                    <label for="cod-verif" class="font-bold block mb-2">Código de 6 dígitos</label>
+                    <input id="cod-verif" pInputText [(ngModel)]="codigoVerificacion" placeholder="Ej: 123456" maxlength="6" />
+                </div>
+            </div>
+            <ng-template pTemplate="footer">
+                <p-button 
+                    label="Cancelar" 
+                    icon="pi pi-times" 
+                    (onClick)="mostrarDialogVerificacion = false" 
+                    styleClass="p-button-text"
+                />
+                <p-button 
+                    label="Verificar y Registrar" 
+                    icon="pi pi-check" 
+                    (onClick)="onRegistrar()" 
+                    [disabled]="codigoVerificacion.length !== 6 || cargando()"
+                    styleClass="spa-btn-primary"
+                />
+            </ng-template>
+        </p-dialog>
     `,
     styles: [`
         .spa-auth-wrapper {
@@ -496,6 +527,10 @@ export class Registro {
     nombreCompleto = '';
     telefono = '';
 
+    // Verificación ADMIN
+    mostrarDialogVerificacion = false;
+    codigoVerificacion = '';
+
     cargando = signal(false);
     errorMensaje = signal('');
 
@@ -530,16 +565,34 @@ export class Registro {
             return;
         }
 
+        // Si es ADMIN y no ha ingresado el código, solicitarlo primero
+        if (this.rol === 'ADMIN' && !this.codigoVerificacion) {
+            this.cargando.set(true);
+            this.authService.enviarCodigoRegistro(this.email).subscribe({
+                next: () => {
+                    this.cargando.set(false);
+                    this.mostrarDialogVerificacion = true;
+                },
+                error: (err) => {
+                    this.errorMensaje.set(err.error?.error || 'Error al enviar código de verificación');
+                    this.cargando.set(false);
+                }
+            });
+            return;
+        }
+
         this.cargando.set(true);
         this.errorMensaje.set('');
 
         this.authService.registro({ 
             email: this.email, 
             contrasenia: this.contrasenia,
-            rol: this.rol 
+            rol: this.rol,
+            codigo: this.codigoVerificacion
         }).subscribe({
             next: (respuesta) => {
                 this.authService.guardarSesion(respuesta.token, respuesta.rol);
+                this.mostrarDialogVerificacion = false;
                 
                 if (this.rol === 'CLIENTE') {
                     this.cargando.set(false);
@@ -551,6 +604,10 @@ export class Registro {
             error: (err) => {
                 this.errorMensaje.set(err.error?.error || 'Error al registrarse');
                 this.cargando.set(false);
+                // Si el error es de código, mantener el diálogo abierto pero mostrar el error
+                if (err.error?.error?.includes('Código')) {
+                    this.codigoVerificacion = '';
+                }
             },
         });
     }

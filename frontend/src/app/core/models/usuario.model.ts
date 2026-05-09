@@ -17,4 +17,5 @@ export interface RegisterRequest {
   email: string;
   contrasenia: string;
   rol?: string;
+  codigo?: string;
 }

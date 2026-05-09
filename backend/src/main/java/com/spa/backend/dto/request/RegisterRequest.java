@@ -8,4 +8,5 @@ public class RegisterRequest {
     private String email;
     private String contrasenia;
     private String rol; // "ADMIN" o "CLIENTE"
+    private String codigo; // Para verificación de ADMIN
 }

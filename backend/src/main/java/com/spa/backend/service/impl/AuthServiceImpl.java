@@ -34,6 +34,9 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final SystemLogService systemLogService;
 
+    // Mapa temporal para códigos de registro (Email -> Código)
+    private static final java.util.Map<String, String> codigosPendientesRegistro = new java.util.concurrent.ConcurrentHashMap<>();
+
     private HttpServletRequest getCurrentRequest() {
         ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         return attrs != null ? attrs.getRequest() : null;
@@ -60,6 +63,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse registrar(RegisterRequest request) {
+        // Si es ADMIN, verificar el código
+        if ("ADMIN".equalsIgnoreCase(request.getRol())) {
+            String codigoGuardado = codigosPendientesRegistro.get(request.getEmail());
+            if (codigoGuardado == null || !codigoGuardado.equals(request.getCodigo())) {
+                throw new RuntimeException("Código de verificación de administrador inválido");
+            }
+            // Consumir el código una vez usado
+            codigosPendientesRegistro.remove(request.getEmail());
+        }
+
         if (usuarioRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Ese email ya está registrado");
         }
@@ -153,5 +166,33 @@ public class AuthServiceImpl implements AuthService {
         systemLogService.logEvent(usuario.getId() + " - " + rol, "Cambio de clave", getCurrentRequest());
 
         return "Contraseña actualizada exitosamente";
+    }
+
+    @Override
+    public String enviarCodigoRegistro(String email) {
+        // Generar código de 6 dígitos
+        String codigo = String.valueOf((int) (Math.random() * 900000) + 100000);
+        codigosPendientesRegistro.put(email, codigo);
+
+        // Enviar correo
+        String cuerpo = "Este codigo de confirmacion es enviado a " + email + "\n\n" +
+                        "Hola,\n\nTu código de verificación para crear tu cuenta de ADMINISTRADOR es: " + codigo + 
+                        "\n\nPor favor, ingrésalo en el formulario de registro.";
+
+        /* 
+         * =========================================================================
+         * ATENCION: ENTORNO DE PRUEBAS
+         * Para usar el correo real del usuario en producción, se debe cambiar la
+         * siguiente línea para que use la variable 'email' en lugar del correo
+         * hardcodeado 'abernasc@fcpn.edu.bo'.
+         * =========================================================================
+         */
+        try {
+            emailService.enviarEmail("abernasc@fcpn.edu.bo", "Código de Verificación Registro Admin - Spa Mascotas", cuerpo);
+        } catch (Exception e) {
+            System.err.println("Advertencia: No se pudo enviar el correo de registro en entorno local. " + e.getMessage());
+        }
+
+        return "Se envió un código de verificación al correo: " + email;
     }
 }
