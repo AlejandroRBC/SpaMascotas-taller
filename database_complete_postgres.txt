@@ -1,0 +1,293 @@
+-- ======================================================
+-- SCRIPT DE GENERACIÓN DE BASE DE DATOS SPA MASCOTAS
+-- MOTOR: POSTGRESQL
+-- ======================================================
+
+-- 1. CATÁLOGOS Y TABLAS DE SOPORTE
+CREATE TABLE IF NOT EXISTS cat_temperamentos (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT UNIQUE NOT NULL,
+    color_alerta TEXT
+);
+
+CREATE TABLE IF NOT EXISTS metodos_pago (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS roles (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT UNIQUE NOT NULL
+);
+
+-- 2. IDENTIDAD Y ACCESO
+CREATE TABLE IF NOT EXISTS usuarios (
+    id BIGSERIAL PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    email_verificado BOOLEAN DEFAULT FALSE,
+    estado TEXT DEFAULT 'activo',
+    creado_el TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    codigo_recuperacion TEXT,
+    codigo_recuperacion_expiracion TIMESTAMP,
+    dos_factor_secret TEXT,
+    dos_factor_habilitado BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS usuario_roles (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    rol_id BIGINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    asignado_el TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. PERSONAL Y CLIENTES
+CREATE TABLE IF NOT EXISTS empleados (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id BIGINT UNIQUE REFERENCES usuarios(id) ON DELETE SET NULL,
+    nombre TEXT NOT NULL,
+    activo BOOLEAN DEFAULT TRUE,
+    puesto TEXT
+);
+
+CREATE TABLE IF NOT EXISTS clientes (
+    id BIGSERIAL PRIMARY KEY,
+    ci TEXT UNIQUE NOT NULL,
+    usuario_id BIGINT UNIQUE REFERENCES usuarios(id) ON DELETE SET NULL,
+    nombre TEXT NOT NULL,
+    telefono TEXT,
+    activo BOOLEAN DEFAULT TRUE
+);
+
+-- 4. MASCOTAS
+CREATE TABLE IF NOT EXISTS mascotas (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    url_foto_mascota TEXT,
+    raza TEXT,
+    tamaño TEXT,
+    temperamento_esperado_id BIGINT REFERENCES cat_temperamentos(id),
+    cliente_id BIGINT REFERENCES clientes(id) ON DELETE CASCADE
+);
+
+-- 5. CONFIGURACIÓN DE TRABAJO Y SERVICIOS
+CREATE TABLE IF NOT EXISTS horarios_trabajo (
+    id BIGSERIAL PRIMARY KEY,
+    empleado_id BIGINT REFERENCES empleados(id) ON DELETE CASCADE,
+    dia_semana TEXT NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    inicio_almuerzo TIME,
+    fin_almuerzo TIME,
+    vigente_desde DATE NOT NULL,
+    vigente_hasta DATE
+);
+
+CREATE TABLE IF NOT EXISTS servicios (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    duracion_minutos INTEGER NOT NULL,
+    precio_base NUMERIC(10,2),
+    activo BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS servicios_precios (
+    id BIGSERIAL PRIMARY KEY,
+    servicio_id BIGINT REFERENCES servicios(id) ON DELETE CASCADE,
+    tamaño_mascota TEXT NOT NULL,
+    precio NUMERIC(10,2) NOT NULL
+);
+
+-- 6. AGENDA Y CITAS
+CREATE TABLE IF NOT EXISTS citas (
+    id BIGSERIAL PRIMARY KEY,
+    cliente_id BIGINT REFERENCES clientes(id),
+    mascota_id BIGINT REFERENCES mascotas(id),
+    empleado_id BIGINT REFERENCES empleados(id),
+    fecha_hora_inicio TIMESTAMP NOT NULL,
+    fecha_hora_fin TIMESTAMP NOT NULL,
+    estado TEXT DEFAULT 'programada'
+);
+
+CREATE TABLE IF NOT EXISTS cita_detalles (
+    id BIGSERIAL PRIMARY KEY,
+    cita_id BIGINT REFERENCES citas(id) ON DELETE CASCADE,
+    servicio_id BIGINT REFERENCES servicios(id),
+    completado BOOLEAN DEFAULT FALSE,
+    precio_final NUMERIC(10,2)
+);
+
+-- 7. INVENTARIO
+CREATE TABLE IF NOT EXISTS categoria (
+    id BIGSERIAL PRIMARY KEY,
+    nom_categoria TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS productos (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    sku TEXT UNIQUE,
+    stock_actual INTEGER DEFAULT 0,
+    precio_venta NUMERIC(10,2),
+    fecha_vencimiento DATE,
+    lote TEXT
+);
+
+CREATE TABLE IF NOT EXISTS es_de_catego (
+    id BIGSERIAL PRIMARY KEY,
+    producto_id BIGINT REFERENCES productos(id) ON DELETE CASCADE,
+    categoria_id BIGINT REFERENCES categoria(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS movimientos_inventario (
+    id BIGSERIAL PRIMARY KEY,
+    empleado_id BIGINT REFERENCES empleados(id),
+    tipo_movimiento_id TEXT,
+    cantidad INTEGER NOT NULL,
+    producto_id BIGINT REFERENCES productos(id),
+    notas TEXT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. GROOMING Y FICHAS TÉCNICAS
+CREATE TABLE IF NOT EXISTS fichas_ingreso (
+    id BIGSERIAL PRIMARY KEY,
+    temperamento_id BIGINT REFERENCES cat_temperamentos(id),
+    cita_id BIGINT UNIQUE REFERENCES citas(id) ON DELETE CASCADE,
+    observaciones_generales TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ficha_detalles (
+    id BIGSERIAL PRIMARY KEY,
+    ficha_id BIGINT REFERENCES fichas_ingreso(id) ON DELETE CASCADE,
+    descripcion_estado TEXT
+);
+
+-- 9. VENTAS Y COMERCIO
+CREATE TABLE IF NOT EXISTS ventas (
+    id BIGSERIAL PRIMARY KEY,
+    cliente_id BIGINT REFERENCES clientes(id),
+    vendedor_id BIGINT REFERENCES empleados(id),
+    metodo_pago_id BIGINT REFERENCES metodos_pago(id),
+    fecha_venta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    subtotal NUMERIC(10,2),
+    descuento NUMERIC(10,2) DEFAULT 0,
+    total_final NUMERIC(10,2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS venta_items (
+    id BIGSERIAL PRIMARY KEY,
+    venta_id BIGINT REFERENCES ventas(id) ON DELETE CASCADE,
+    producto_id BIGINT REFERENCES productos(id),
+    cantidad INTEGER NOT NULL,
+    precio_unitario_historico NUMERIC(10,2)
+);
+
+CREATE TABLE IF NOT EXISTS pedido (
+    id BIGSERIAL PRIMARY KEY,
+    venta_items_id BIGINT REFERENCES venta_items(id) ON DELETE CASCADE,
+    estado TEXT,
+    fecha_envio DATE,
+    fecha_entrega DATE
+);
+
+CREATE TABLE IF NOT EXISTS venta_servicios (
+    id BIGSERIAL PRIMARY KEY,
+    venta_id BIGINT REFERENCES ventas(id) ON DELETE CASCADE,
+    cita_detalle_id BIGINT UNIQUE REFERENCES cita_detalles(id),
+    precio_cobrado NUMERIC(10,2)
+);
+
+-- 10. MULTIMEDIA Y FIDELIZACIÓN
+CREATE TABLE IF NOT EXISTS galeria_mascotas (
+    id BIGSERIAL PRIMARY KEY,
+    cita_id BIGINT REFERENCES citas(id),
+    url_image TEXT NOT NULL,
+    momento TEXT,
+    fecha_carga TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS recomendaciones_post_servicio (
+    id BIGSERIAL PRIMARY KEY,
+    cita_id BIGINT UNIQUE REFERENCES citas(id) ON DELETE CASCADE,
+    recomendacion TEXT,
+    proxima_cita_sugerida DATE
+);
+
+CREATE TABLE IF NOT EXISTS calificaciones_cita (
+    id BIGSERIAL PRIMARY KEY,
+    cita_id BIGINT UNIQUE REFERENCES citas(id) ON DELETE CASCADE,
+    puntuacion INTEGER CHECK (puntuacion >= 1 AND puntuacion <= 5),
+    comentario TEXT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 11. SALUD Y SEGURIDAD
+CREATE TABLE IF NOT EXISTS vacunas (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mascota_vacunas (
+    id BIGSERIAL PRIMARY KEY,
+    vacuna_id BIGINT REFERENCES vacunas(id),
+    mascota_id BIGINT REFERENCES mascotas(id) ON DELETE CASCADE,
+    fecha_aplicacion DATE NOT NULL,
+    fecha_refuerzo DATE
+);
+
+CREATE TABLE IF NOT EXISTS restricciones_mascota (
+    id BIGSERIAL PRIMARY KEY,
+    mascota_id BIGINT REFERENCES mascotas(id) ON DELETE CASCADE,
+    tipo TEXT,
+    descripcion TEXT,
+    gravedad TEXT
+);
+
+-- 12. PREFERENCIAS Y NOTIFICACIONES
+CREATE TABLE IF NOT EXISTS cliente_preferencias (
+    id BIGSERIAL PRIMARY KEY,
+    cliente_id BIGINT REFERENCES clientes(id) ON DELETE CASCADE,
+    nombre TEXT NOT NULL,
+    valor TEXT
+);
+
+CREATE TABLE IF NOT EXISTS notificaciones_programadas (
+    id BIGSERIAL PRIMARY KEY,
+    tipo TEXT NOT NULL,
+    canal TEXT NOT NULL,
+    cliente_destino_id BIGINT REFERENCES clientes(id) ON DELETE CASCADE,
+    programado_para TIMESTAMP NOT NULL,
+    estado TEXT DEFAULT 'pendiente'
+);
+
+-- 13. AUDITORÍA Y DISPONIBILIDAD
+CREATE TABLE IF NOT EXISTS bloqueos_agenda (
+    id BIGSERIAL PRIMARY KEY,
+    titulo TEXT NOT NULL,
+    tipo TEXT,
+    fecha_inicio TIMESTAMP NOT NULL,
+    fecha_fin TIMESTAMP NOT NULL,
+    empleado_id BIGINT REFERENCES empleados(id),
+    descripcion TEXT,
+    creado_por BIGINT REFERENCES usuarios(id)
+);
+
+CREATE TABLE IF NOT EXISTS system_logs (
+    id BIGSERIAL PRIMARY KEY,
+    usuario_info TEXT,
+    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address TEXT,
+    user_agent TEXT,
+    accion TEXT
+);
+
+-- 14. INSERCIÓN DE DATOS INICIALES BÁSICOS
+INSERT INTO roles (nombre) VALUES ('ADMIN'), ('RECEPCIONISTA'), ('GROOMER'), ('CLIENTE') ON CONFLICT DO NOTHING;
+INSERT INTO metodos_pago (nombre) VALUES ('EFECTIVO'), ('TARJETA'), ('QR'), ('TRANSFERENCIA') ON CONFLICT DO NOTHING;
+INSERT INTO cat_temperamentos (nombre, color_alerta) VALUES 
+('Tranquilo', 'verde'), 
+('Nervioso', 'amarillo'), 
+('Agresivo', 'rojo'), 
+('Miedoso', 'naranja') ON CONFLICT DO NOTHING;

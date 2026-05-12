@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
+import com.spa.backend.service.interfaces.EmailService;
 import com.spa.backend.service.interfaces.SystemLogService;
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
     private final SystemLogService systemLogService;
 
     private HttpServletRequest getCurrentRequest() {
@@ -39,8 +41,8 @@ public class EmpleadoServiceImpl implements EmpleadoService {
 
     @Override
     public List<Empleado> listarTodos() {
-        List<Empleado> lista = empleadoRepository.findAll();
-        log.info("Se encontraron {} empleados en la base de datos", lista.size());
+        List<Empleado> lista = empleadoRepository.findByActivoTrue();
+        log.info("Se encontraron {} empleados activos en la base de datos", lista.size());
         return lista;
     }
 
@@ -61,12 +63,31 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
             Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                     .orElseGet(() -> {
+                        String tokenAcceso = java.util.UUID.randomUUID().toString()
+                                .replace("-", "").substring(0, 12).toUpperCase();
                         Usuario nuevoUsuario = new Usuario();
                         nuevoUsuario.setEmail(request.getEmail());
-                        // Contraseña por defecto para empleados nuevos: "Empleado123!"
-                        nuevoUsuario.setPasswordHash(passwordEncoder.encode("Empleado123!"));
+                        nuevoUsuario.setPasswordHash(passwordEncoder.encode(tokenAcceso));
+                        nuevoUsuario.setRequiereCambioContrasenia(true);
                         nuevoUsuario.setEstado("activo");
-                        return usuarioRepository.save(nuevoUsuario);
+                        Usuario guardado = usuarioRepository.save(nuevoUsuario);
+
+                        try {
+                            String cuerpo = "Este correo es enviado al empleado: " + request.getEmail() + "\n\n" +
+                                    "Hola " + request.getNombre() + ",\n\n" +
+                                    "Tu cuenta en Spa Mascotas ha sido creada.\n\n" +
+                                    "Credenciales de acceso:\n" +
+                                    "  Email: " + request.getEmail() + "\n" +
+                                    "  Contraseña temporal: " + tokenAcceso + "\n\n" +
+                                    "Al iniciar sesión deberás cambiar tu contraseña obligatoriamente.\n\n" +
+                                    "Equipo Spa Mascotas";
+                            emailService.enviarEmail("abernasc@fcpn.edu.bo",
+                                    "Bienvenido a Spa Mascotas - Credenciales de acceso", cuerpo);
+                        } catch (Exception e) {
+                            log.warn("No se pudo enviar el correo al empleado {}: {}", request.getEmail(), e.getMessage());
+                        }
+
+                        return guardado;
                     });
                     
             if (request.getRol() != null && !request.getRol().isEmpty()) {
@@ -98,8 +119,17 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     public void eliminar(Long id) {
         Empleado empleado = empleadoRepository.findById(id).orElse(null);
         if (empleado != null) {
-            empleadoRepository.deleteById(id);
-            systemLogService.logEvent(null, "Eliminación de empleado: " + empleado.getNombre(), getCurrentRequest());
+            empleado.setActivo(false);
+            
+            // Si tiene un usuario asociado, también lo desactivamos
+            if (empleado.getUsuario() != null) {
+                Usuario user = empleado.getUsuario();
+                user.setEstado("inactivo");
+                usuarioRepository.save(user);
+            }
+            
+            empleadoRepository.save(empleado);
+            systemLogService.logEvent(null, "Eliminación lógica de empleado: " + empleado.getNombre() + " (Email: " + (empleado.getUsuario() != null ? empleado.getUsuario().getEmail() : "N/A") + ")", getCurrentRequest());
         }
     }
 }

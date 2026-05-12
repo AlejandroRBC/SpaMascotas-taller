@@ -38,7 +38,7 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     public List<Cliente> listarTodos() {
-        return clienteRepository.findAll();
+        return clienteRepository.findByActivoTrue();
     }
 
     @Override
@@ -89,8 +89,17 @@ public class ClienteServiceImpl implements ClienteService {
     public void eliminar(Long id) {
         Cliente cliente = clienteRepository.findById(id).orElse(null);
         if (cliente != null) {
-            clienteRepository.deleteById(id);
-            systemLogService.logEvent(null, "Eliminación de cliente: " + cliente.getNombre(), getCurrentRequest());
+            cliente.setActivo(false);
+            
+            // Si tiene un usuario asociado, también lo desactivamos
+            if (cliente.getUsuario() != null) {
+                Usuario user = cliente.getUsuario();
+                user.setEstado("inactivo");
+                usuarioRepository.save(user);
+            }
+            
+            clienteRepository.save(cliente);
+            systemLogService.logEvent(null, "Eliminación lógica de cliente: " + cliente.getNombre() + " (Email: " + (cliente.getUsuario() != null ? cliente.getUsuario().getEmail() : "N/A") + ")", getCurrentRequest());
         }
     }
 }

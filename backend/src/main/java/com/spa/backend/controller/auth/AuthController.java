@@ -1,5 +1,6 @@
 package com.spa.backend.controller.auth;
 
+import com.spa.backend.dto.request.CambiarContraseniaInicialRequest;
 import com.spa.backend.dto.request.LoginRequest;
 import com.spa.backend.dto.request.RegisterRequest;
 import com.spa.backend.dto.request.ResetPasswordRequest;
@@ -44,5 +45,11 @@ public class AuthController {
     @PostMapping("/enviar-codigo-registro")
     public ResponseEntity<String> enviarCodigoRegistro(@RequestParam String email) {
         return ResponseEntity.ok(authService.enviarCodigoRegistro(email));
+    }
+
+    // POST /api/auth/cambiar-contrasenia-inicial
+    @PostMapping("/cambiar-contrasenia-inicial")
+    public ResponseEntity<String> cambiarContraseniaInicial(@RequestBody CambiarContraseniaInicialRequest request) {
+        return ResponseEntity.ok(authService.cambiarContraseniaInicial(request.getEmail(), request.getNuevaContrasenia()));
     }
 }

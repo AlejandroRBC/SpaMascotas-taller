@@ -376,7 +376,12 @@ export class Login {
         this.authService.login({ email: this.email, contrasenia: this.contrasenia }).subscribe({
             next: (respuesta) => {
                 this.authService.guardarSesion(respuesta.token, respuesta.rol);
-                this.router.navigate(['/']);
+                if (respuesta.requiereCambioContrasenia) {
+                    this.router.navigate(['/auth/cambiar-contrasenia-inicial'],
+                        { state: { email: respuesta.email } });
+                } else {
+                    this.router.navigate(['/']);
+                }
             },
             error: (err) => {
                 this.errorMensaje.set(err.error?.error || 'Error al iniciar sesión');

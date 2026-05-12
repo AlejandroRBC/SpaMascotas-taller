@@ -65,6 +65,15 @@ export class AuthService {
         );
     }
 
+    // Cambia la contraseña en el primer acceso (empleados recién creados)
+    cambiarContraseniaInicial(email: string, nuevaContrasenia: string) {
+        return this.http.post<string>(
+            `${this.apiUrl}/cambiar-contrasenia-inicial`,
+            { email, nuevaContrasenia },
+            { responseType: 'text' as 'json' }
+        );
+    }
+
     // Guarda el token en localStorage
     guardarToken(token: string): void {
         localStorage.setItem(this.TOKEN_KEY, token);

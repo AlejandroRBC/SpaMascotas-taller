@@ -7,6 +7,7 @@ import { Recuperar } from './recuperar';
 import { Empleado } from './empleado';
 import { Cliente } from './cliente';
 import { Restablecer } from './restablecer';
+import { CambiarContraseniaInicial } from './cambiar-contrasenia-inicial';
 
 export default [
     { path: 'access', component: Access },
@@ -16,5 +17,6 @@ export default [
     { path: 'recuperar', component: Recuperar },
     { path: 'restablecer', component: Restablecer },
     { path: 'empleado', component: Empleado },
-    { path: 'cliente', component: Cliente }
+    { path: 'cliente', component: Cliente },
+    { path: 'cambiar-contrasenia-inicial', component: CambiarContraseniaInicial }
 ] as Routes;

@@ -29,6 +29,17 @@ public class Usuario {
     @Column(name = "creado_el")
     private LocalDateTime creadoEl;
 
+    // --- Campos para bloqueo por intentos fallidos ---
+    @Column(name = "intentos_fallidos", columnDefinition = "integer default 0")
+    private Integer intentosFallidos = 0;
+
+    @Column(name = "bloqueado_hasta")
+    private LocalDateTime bloqueadoHasta;
+
+    // --- Flag para cambio obligatorio de contraseña en primer acceso ---
+    @Column(name = "requiere_cambio_contrasenia")
+    private Boolean requiereCambioContrasenia = false;
+
     // --- Campos para 2FA y Recuperación ---
     @Column(name = "codigo_recuperacion")
     private String codigoRecuperacion;
@@ -39,8 +50,8 @@ public class Usuario {
     @Column(name = "dos_factor_secret")
     private String dosFactorSecret;
 
-    @Column(name = "dos_factor_habilitado")
-    private boolean dosFactorHabilitado = false;
+    @Column(name = "dos_factor_habilitado", columnDefinition = "boolean default false")
+    private Boolean dosFactorHabilitado = false;
 
     // --- Relación con Roles ---
     @ManyToMany(fetch = FetchType.EAGER)

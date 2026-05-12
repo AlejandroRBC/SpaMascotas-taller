@@ -4,6 +4,7 @@ export interface AuthResponse {
   email: string;
   mensaje: string;
   rol: string;
+  requiereCambioContrasenia: boolean;
 }
 
 // Datos que el usuario escribe para hacer login

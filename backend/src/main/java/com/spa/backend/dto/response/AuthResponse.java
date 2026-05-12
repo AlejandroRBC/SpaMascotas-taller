@@ -7,8 +7,9 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class AuthResponse {
-    private String token; // el JWT
-    private String email; // el email del usuario
-    private String mensaje; // ej: "Login exitoso"
-    private String rol; // el rol principal del usuario
+    private String token;
+    private String email;
+    private String mensaje;
+    private String rol;
+    private boolean requiereCambioContrasenia;
 }

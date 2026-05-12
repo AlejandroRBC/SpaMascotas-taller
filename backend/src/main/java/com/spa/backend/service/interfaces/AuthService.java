@@ -11,4 +11,5 @@ public interface AuthService {
     String recuperarContrasenia(String email);
     String restablecerContrasenia(ResetPasswordRequest request);
     String enviarCodigoRegistro(String email);
+    String cambiarContraseniaInicial(String email, String nuevaContrasenia);
 }
