@@ -37,7 +37,10 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     @Override
-    public List<Cliente> listarTodos() {
+    public List<Cliente> listar(boolean incluirInactivos) {
+        if (incluirInactivos) {
+            return clienteRepository.findAll();
+        }
         return clienteRepository.findByActivoTrue();
     }
 
@@ -100,6 +103,20 @@ public class ClienteServiceImpl implements ClienteService {
             
             clienteRepository.save(cliente);
             systemLogService.logEvent(null, "Eliminación lógica de cliente: " + cliente.getNombre() + " (Email: " + (cliente.getUsuario() != null ? cliente.getUsuario().getEmail() : "N/A") + ")", getCurrentRequest());
+        }
+    }
+
+    @Override
+    public void reactivar(Long id) {
+        Cliente cliente = clienteRepository.findById(id).orElse(null);
+        if (cliente != null) {
+            cliente.setActivo(true);
+            if (cliente.getUsuario() != null) {
+                cliente.getUsuario().setEstado("activo");
+                usuarioRepository.save(cliente.getUsuario());
+            }
+            clienteRepository.save(cliente);
+            systemLogService.logEvent(null, "Reactivación de cliente: " + cliente.getNombre(), getCurrentRequest());
         }
     }
 }

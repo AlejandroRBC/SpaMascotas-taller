@@ -9,11 +9,13 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Cliente, ClienteService } from '@/app/core/services/cliente.service';
+import { ToggleButtonModule } from 'primeng/togglebutton';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-clientes',
     standalone: true,
-    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToolbarModule, ToastModule],
+    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToolbarModule, ToastModule, ToggleButtonModule, ProgressSpinnerModule],
     providers: [MessageService],
     template: `
         <div class="card">
@@ -21,6 +23,12 @@ import { Cliente, ClienteService } from '@/app/core/services/cliente.service';
             <p-toolbar styleClass="mb-4 gap-2">
                 <ng-template pTemplate="left">
                     <p-button label="Nuevo Cliente" icon="pi pi-plus" severity="success" class="mr-2" (onClick)="openNew()" />
+                </ng-template>
+                <ng-template pTemplate="right">
+                    <div class="flex align-items-center gap-2">
+                        <span class="font-bold">Mostrar Inactivos</span>
+                        <p-toggleButton [(ngModel)]="mostrarInactivos" onLabel="Sí" offLabel="No" (onChange)="loadClientes()" />
+                    </div>
                 </ng-template>
             </p-toolbar>
 
@@ -58,7 +66,11 @@ import { Cliente, ClienteService } from '@/app/core/services/cliente.service';
                         </td>
                         <td>
                             <p-button icon="pi pi-pencil" [rounded]="true" severity="success" class="mr-2" (onClick)="editCliente(cliente)" />
-                            <p-button icon="pi pi-trash" [rounded]="true" severity="danger" (onClick)="deleteCliente(cliente)" />
+                            @if (cliente.activo) {
+                                <p-button icon="pi pi-trash" [rounded]="true" severity="danger" (onClick)="deleteCliente(cliente)" />
+                            } @else {
+                                <p-button icon="pi pi-refresh" [rounded]="true" severity="info" (onClick)="reactivarCliente(cliente)" />
+                            }
                         </td>
                     </tr>
                 </ng-template>
@@ -90,6 +102,14 @@ import { Cliente, ClienteService } from '@/app/core/services/cliente.service';
                 <p-button label="Guardar" icon="pi pi-check" [text]="true" (onClick)="saveCliente()" />
             </ng-template>
         </p-dialog>
+
+        <!-- Diálogo de carga (Spinner) -->
+        <p-dialog [visible]="cargando()" [modal]="true" [closable]="false" [showHeader]="false" [style]="{ width: '200px' }">
+            <div class="flex flex-column align-items-center justify-content-center p-4">
+                <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4" />
+                <span class="mt-3 font-bold">Procesando...</span>
+            </div>
+        </p-dialog>
     `
 })
 export class Clientes implements OnInit {
@@ -99,13 +119,15 @@ export class Clientes implements OnInit {
     clientes = signal<Cliente[]>([]);
     cliente: Cliente = { ci: '', nombre: '', telefono: '', activo: true, email: '' };
     clienteDialog = signal(false);
+    mostrarInactivos = false;
+    cargando = signal(false);
 
     ngOnInit() {
         this.loadClientes();
     }
 
     loadClientes() {
-        this.clienteService.listar().subscribe({
+        this.clienteService.listar(this.mostrarInactivos).subscribe({
             next: (data) => {
                 this.clientes.set(data);
             },
@@ -140,10 +162,37 @@ export class Clientes implements OnInit {
 
     saveCliente() {
         if (this.cliente.ci.trim() && this.cliente.nombre.trim()) {
-            this.clienteService.guardar(this.cliente).subscribe(() => {
+            this.cargando.set(true);
+
+            const timeout = setTimeout(() => {
+                if (this.cargando()) {
+                    this.cargando.set(false);
+                    this.messageService.add({ severity: 'warn', summary: 'Tiempo agotado', detail: 'La operación está tardando más de lo esperado' });
+                }
+            }, 10000);
+
+            this.clienteService.guardar(this.cliente).subscribe({
+                next: () => {
+                    clearTimeout(timeout);
+                    this.loadClientes();
+                    this.hideDialog();
+                    this.cargando.set(false);
+                    this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Cliente guardado' });
+                },
+                error: () => {
+                    clearTimeout(timeout);
+                    this.cargando.set(false);
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el cliente' });
+                }
+            });
+        }
+    }
+
+    reactivarCliente(cliente: Cliente) {
+        if (confirm(`¿Reactivar al cliente ${cliente.nombre}?`)) {
+            this.clienteService.reactivar(cliente.id!).subscribe(() => {
                 this.loadClientes();
-                this.hideDialog();
-                this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Cliente guardado' });
+                this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Cliente reactivado' });
             });
         }
     }

@@ -23,8 +23,8 @@ export class ClienteService {
     private http = inject(HttpClient);
     private apiUrl = 'http://localhost:8080/api/clientes';
 
-    listar(): Observable<Cliente[]> {
-        return this.http.get<Cliente[]>(this.apiUrl);
+    listar(incluirInactivos: boolean = false): Observable<Cliente[]> {
+        return this.http.get<Cliente[]>(`${this.apiUrl}?incluirInactivos=${incluirInactivos}`);
     }
 
     guardar(cliente: Cliente): Observable<Cliente> {
@@ -33,5 +33,9 @@ export class ClienteService {
 
     eliminar(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    }
+
+    reactivar(id: number): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/${id}/reactivar`, {});
     }
 }

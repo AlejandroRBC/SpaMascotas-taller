@@ -59,6 +59,11 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Cuenta bloqueada. Intente de nuevo en " + minutos + " minuto(s).");
         }
 
+        // Verificar si la cuenta está activa
+        if (usuario != null && "inactivo".equalsIgnoreCase(usuario.getEstado())) {
+            throw new RuntimeException("Tu cuenta está desactivada. Contacta al administrador.");
+        }
+
         // Intentar autenticación
         try {
             authManager.authenticate(
@@ -67,12 +72,19 @@ public class AuthServiceImpl implements AuthService {
             if (usuario != null) {
                 int intentos = usuario.getIntentosFallidos() + 1;
                 usuario.setIntentosFallidos(intentos);
+                
+                // Log de cada intento fallido
+                systemLogService.logEvent(
+                        String.valueOf(usuario.getId()),
+                        "Intento fallido de inicio de sesión. Intento #" + intentos,
+                        getCurrentRequest());
+
                 if (intentos >= MAX_INTENTOS) {
                     usuario.setBloqueadoHasta(LocalDateTime.now().plusMinutes(MINUTOS_BLOQUEO));
                     usuarioRepository.save(usuario);
                     systemLogService.logEvent(
                             String.valueOf(usuario.getId()),
-                            "Cuenta bloqueada por " + MINUTOS_BLOQUEO + " min tras " + MAX_INTENTOS + " intentos fallidos",
+                            "CUENTA BLOQUEADA por " + MINUTOS_BLOQUEO + " min tras " + MAX_INTENTOS + " intentos fallidos",
                             getCurrentRequest());
                     throw new RuntimeException("Cuenta bloqueada por " + MINUTOS_BLOQUEO
                             + " minutos tras demasiados intentos fallidos.");

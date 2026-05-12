@@ -16,8 +16,8 @@ public class EmpleadoController {
     private final EmpleadoService empleadoService;
 
     @GetMapping
-    public ResponseEntity<List<Empleado>> listar() {
-        return ResponseEntity.ok(empleadoService.listarTodos());
+    public ResponseEntity<List<Empleado>> listar(@RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(empleadoService.listar(incluirInactivos));
     }
 
     @PostMapping
@@ -35,5 +35,17 @@ public class EmpleadoController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         empleadoService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/reactivar")
+    public ResponseEntity<Void> reactivar(@PathVariable Long id) {
+        empleadoService.reactivar(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/reset-password")
+    public ResponseEntity<Void> resetPassword(@PathVariable Long id) {
+        empleadoService.resetearContrasenia(id);
+        return ResponseEntity.ok().build();
     }
 }

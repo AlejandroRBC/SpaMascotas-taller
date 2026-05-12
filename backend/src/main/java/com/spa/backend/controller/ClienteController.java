@@ -17,8 +17,8 @@ public class ClienteController {
     private final ClienteService clienteService;
 
     @GetMapping
-    public ResponseEntity<List<Cliente>> listarTodos() {
-        return ResponseEntity.ok(clienteService.listarTodos());
+    public ResponseEntity<List<Cliente>> listar(@RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(clienteService.listar(incluirInactivos));
     }
 
     @PostMapping
@@ -29,6 +29,12 @@ public class ClienteController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         clienteService.eliminar(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/reactivar")
+    public ResponseEntity<Void> reactivar(@PathVariable Long id) {
+        clienteService.reactivar(id);
         return ResponseEntity.ok().build();
     }
 }

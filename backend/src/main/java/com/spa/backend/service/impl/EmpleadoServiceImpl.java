@@ -40,10 +40,11 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     }
 
     @Override
-    public List<Empleado> listarTodos() {
-        List<Empleado> lista = empleadoRepository.findByActivoTrue();
-        log.info("Se encontraron {} empleados activos en la base de datos", lista.size());
-        return lista;
+    public List<Empleado> listar(boolean incluirInactivos) {
+        if (incluirInactivos) {
+            return empleadoRepository.findAll();
+        }
+        return empleadoRepository.findByActivoTrue();
     }
 
     @Override
@@ -131,5 +132,56 @@ public class EmpleadoServiceImpl implements EmpleadoService {
             empleadoRepository.save(empleado);
             systemLogService.logEvent(null, "Eliminación lógica de empleado: " + empleado.getNombre() + " (Email: " + (empleado.getUsuario() != null ? empleado.getUsuario().getEmail() : "N/A") + ")", getCurrentRequest());
         }
+    }
+
+    @Override
+    public void reactivar(Long id) {
+        Empleado empleado = empleadoRepository.findById(id).orElse(null);
+        if (empleado != null) {
+            empleado.setActivo(true);
+            if (empleado.getUsuario() != null) {
+                empleado.getUsuario().setEstado("activo");
+                usuarioRepository.save(empleado.getUsuario());
+            }
+            empleadoRepository.save(empleado);
+            systemLogService.logEvent(null, "Reactivación de empleado: " + empleado.getNombre(), getCurrentRequest());
+        }
+    }
+
+    @Override
+    public void resetearContrasenia(Long id) {
+        Empleado empleado = empleadoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
+        
+        Usuario usuario = empleado.getUsuario();
+        if (usuario == null) {
+            throw new RuntimeException("El empleado no tiene un usuario asociado");
+        }
+
+        // Generar nueva contraseña temporal
+        String nuevaContrasenia = java.util.UUID.randomUUID().toString()
+                .replace("-", "").substring(0, 12).toUpperCase();
+        
+        usuario.setPasswordHash(passwordEncoder.encode(nuevaContrasenia));
+        usuario.setRequiereCambioContrasenia(true);
+        
+        // Desbloquear si estaba bloqueado
+        usuario.setIntentosFallidos(0);
+        usuario.setBloqueadoHasta(null);
+        
+        usuarioRepository.save(usuario);
+
+        // Enviar por email
+        try {
+            String cuerpo = "Hola " + empleado.getNombre() + ",\n\n" +
+                    "Tu contraseña ha sido reseteada por un administrador.\n\n" +
+                    "Nueva contraseña temporal: " + nuevaContrasenia + "\n\n" +
+                    "Deberás cambiarla en tu próximo inicio de sesión.";
+            emailService.enviarEmail("abernasc@fcpn.edu.bo", "Reseteo de contraseña - Spa Mascotas", cuerpo);
+        } catch (Exception e) {
+            log.error("Error al enviar email de reseteo: {}", e.getMessage());
+        }
+
+        systemLogService.logEvent(null, "Reseteo de contraseña para: " + empleado.getNombre(), getCurrentRequest());
     }
 }

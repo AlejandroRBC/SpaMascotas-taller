@@ -5,8 +5,10 @@ import com.spa.backend.model.Empleado;
 import java.util.List;
 
 public interface EmpleadoService {
-    List<Empleado> listarTodos();
+    List<Empleado> listar(boolean incluirInactivos);
     Empleado guardar(EmpleadoRequest request);
     Empleado obtenerPorId(Long id);
     void eliminar(Long id);
+    void reactivar(Long id);
+    void resetearContrasenia(Long id);
 }

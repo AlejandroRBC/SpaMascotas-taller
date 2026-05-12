@@ -11,11 +11,13 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Empleado, EmpleadoService } from '@/app/core/services/empleado.service';
 import { Rol, RolService } from '@/app/core/services/rol.service';
+import { ToggleButtonModule } from 'primeng/togglebutton';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @Component({
     selector: 'app-empleados',
     standalone: true,
-    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToolbarModule, ToastModule, SelectModule],
+    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToolbarModule, ToastModule, SelectModule, ToggleButtonModule, ProgressSpinnerModule],
     providers: [MessageService],
     template: `
         <div class="card">
@@ -23,6 +25,12 @@ import { Rol, RolService } from '@/app/core/services/rol.service';
             <p-toolbar styleClass="mb-4 gap-2">
                 <ng-template pTemplate="left">
                     <p-button label="Nuevo Empleado" icon="pi pi-plus" severity="success" class="mr-2" (onClick)="openNew()" />
+                </ng-template>
+                <ng-template pTemplate="right">
+                    <div class="flex align-items-center gap-2">
+                        <span class="font-bold">Mostrar Inactivos</span>
+                        <p-toggleButton [(ngModel)]="mostrarInactivos" onLabel="Sí" offLabel="No" (onChange)="loadEmpleados()" />
+                    </div>
                 </ng-template>
             </p-toolbar>
 
@@ -60,8 +68,13 @@ import { Rol, RolService } from '@/app/core/services/rol.service';
                             </span>
                         </td>
                         <td>
-                            <p-button icon="pi pi-pencil" [rounded]="true" severity="success" class="mr-2" (onClick)="editEmpleado(empleado)" />
-                            <p-button icon="pi pi-trash" [rounded]="true" severity="danger" (onClick)="deleteEmpleado(empleado)" />
+                            <p-button icon="pi pi-pencil" [rounded]="true" severity="success" class="mr-2" (onClick)="editEmpleado(empleado)" pTooltip="Editar" />
+                            @if (empleado.activo) {
+                                <p-button icon="pi pi-key" [rounded]="true" severity="warn" class="mr-2" (onClick)="resetPassword(empleado)" pTooltip="Resetear Contraseña" />
+                                <p-button icon="pi pi-trash" [rounded]="true" severity="danger" (onClick)="deleteEmpleado(empleado)" pTooltip="Desactivar" />
+                            } @else {
+                                <p-button icon="pi pi-refresh" [rounded]="true" severity="info" (onClick)="reactivarEmpleado(empleado)" pTooltip="Reactivar" />
+                            }
                         </td>
                     </tr>
                 </ng-template>
@@ -89,6 +102,14 @@ import { Rol, RolService } from '@/app/core/services/rol.service';
                 <p-button label="Guardar" icon="pi pi-check" [text]="true" (onClick)="saveEmpleado()" />
             </ng-template>
         </p-dialog>
+
+        <!-- Diálogo de carga (Spinner) -->
+        <p-dialog [visible]="cargando()" [modal]="true" [closable]="false" [showHeader]="false" [style]="{ width: '200px' }">
+            <div class="flex flex-column align-items-center justify-content-center p-4">
+                <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="4" />
+                <span class="mt-3 font-bold">Procesando...</span>
+            </div>
+        </p-dialog>
     `
 })
 export class Empleados implements OnInit {
@@ -99,7 +120,9 @@ export class Empleados implements OnInit {
     empleados = signal<Empleado[]>([]);
     rolesList = signal<Rol[]>([]);
     currentTab = signal<'RECEPCIONISTA' | 'GROOMER'>('RECEPCIONISTA');
-    
+    mostrarInactivos = false;
+    cargando = signal(false);
+
     empleado: Empleado = { nombre: '', rol: '', activo: true };
     empleadoDialog = signal(false);
 
@@ -127,7 +150,7 @@ export class Empleados implements OnInit {
     }
 
     loadEmpleados() {
-        this.empleadoService.listar().subscribe({
+        this.empleadoService.listar(this.mostrarInactivos).subscribe({
             next: (data) => {
                 console.log('Empleados cargados con éxito:', data);
                 this.empleados.set(data);
@@ -165,10 +188,46 @@ export class Empleados implements OnInit {
 
     saveEmpleado() {
         if (this.empleado.nombre.trim()) {
-            this.empleadoService.guardar(this.empleado).subscribe(() => {
+            this.cargando.set(true);
+
+            // Timeout de seguridad de 5 segundos
+            const timeout = setTimeout(() => {
+                if (this.cargando()) {
+                    this.cargando.set(false);
+                    this.messageService.add({ severity: 'warn', summary: 'Tiempo agotado', detail: 'La operación está tardando más de lo esperado' });
+                }
+            }, 10000);
+
+            this.empleadoService.guardar(this.empleado).subscribe({
+                next: () => {
+                    clearTimeout(timeout);
+                    this.loadEmpleados();
+                    this.hideDialog();
+                    this.cargando.set(false);
+                    this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Empleado guardado' });
+                },
+                error: () => {
+                    clearTimeout(timeout);
+                    this.cargando.set(false);
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el empleado' });
+                }
+            });
+        }
+    }
+
+    reactivarEmpleado(empleado: Empleado) {
+        if (confirm(`¿Reactivar a ${empleado.nombre}?`)) {
+            this.empleadoService.reactivar(empleado.id!).subscribe(() => {
                 this.loadEmpleados();
-                this.hideDialog();
-                this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Empleado guardado' });
+                this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Empleado reactivado' });
+            });
+        }
+    }
+
+    resetPassword(empleado: Empleado) {
+        if (confirm(`¿Resetear contraseña de ${empleado.nombre}? Se enviará una nueva al correo.`)) {
+            this.empleadoService.resetPassword(empleado.id!).subscribe(() => {
+                this.messageService.add({ severity: 'success', summary: 'Enviado', detail: 'Nueva contraseña enviada al email' });
             });
         }
     }

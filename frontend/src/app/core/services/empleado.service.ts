@@ -22,8 +22,8 @@ export class EmpleadoService {
     private http = inject(HttpClient);
     private apiUrl = 'http://localhost:8080/api/empleados';
 
-    listar(): Observable<Empleado[]> {
-        return this.http.get<Empleado[]>(this.apiUrl);
+    listar(incluirInactivos: boolean = false): Observable<Empleado[]> {
+        return this.http.get<Empleado[]>(`${this.apiUrl}?incluirInactivos=${incluirInactivos}`);
     }
 
     guardar(empleado: Empleado): Observable<Empleado> {
@@ -32,5 +32,13 @@ export class EmpleadoService {
 
     eliminar(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    }
+
+    reactivar(id: number): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/${id}/reactivar`, {});
+    }
+
+    resetPassword(id: number): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/${id}/reset-password`, {});
     }
 }
